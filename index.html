@@ -271,6 +271,16 @@
       transform: translateY(0);
     }
 
+    .error-bubble {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 190;
+      margin: 0;
+      max-width: min(320px, calc(100vw - 28px));
+      pointer-events: none;
+    }
+
     .level-meta {
       margin: 0 0 8px;
       color: #ffb9de;
@@ -304,6 +314,7 @@
     <section id="screen" class="panel"></section>
   </main>
 
+  <div id="errorBubble" class="bubble error-bubble" aria-live="polite"></div>
 
   <div id="achievementOverlay" class="achievement-overlay hidden">
     <div class="achievement-card">
@@ -439,6 +450,7 @@
     const achievementBtn = document.getElementById("achievementBtn");
     const rewardOverlay = document.getElementById("rewardOverlay");
     const rewardClaimBtn = document.getElementById("rewardClaimBtn");
+    const bubbleEl = document.getElementById("errorBubble");
     const bubbleEl = document.getElementById("witchBubble");
 
     function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
@@ -493,6 +505,13 @@
       [523, 659, 784, 1046, 1318, 1568].forEach((f, i) => tone(f, 0.14, "square", 0.05, i * 0.08));
     }
 
+    function showErrorBubble(messageOptional, ms = 3000) {
+      if (!bubbleEl) return;
+      const text = messageOptional || pick(errorBubbleMessages);
+      bubbleEl.textContent = text;
+      bubbleEl.classList.add("show");
+      clearTimeout(showErrorBubble._hide);
+      showErrorBubble._hide = setTimeout(() => bubbleEl.classList.remove("show"), ms);
     function showBubble(text, ms = 3300) {
       if (!bubbleEl) return;
       bubbleEl.textContent = text;
@@ -505,6 +524,7 @@
       state.mistakes += 1;
       updateHUD();
       playWrong();
+      showErrorBubble();
       showBubble(pick(witchLines.wrong));
     }
 
@@ -600,6 +620,7 @@
 
       function submitPassword() {
         const value = input.value.trim().toLowerCase();
+        if (value === "allentown") {
         if (value === "center valley") {
           localStorage.setItem("loveQuestUnlocked", "true");
           state.unlocked = true;
