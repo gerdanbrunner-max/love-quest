@@ -368,14 +368,6 @@
       ]
     };
 
-    const errorBubbleMessages = [
-      "You know better, husband",
-      "Wrong answer. Try again.",
-      "The witch is pleased. Unfortunately.",
-      "Nope. You are not a cozy boy",
-      "Incorrect. The princess remains snatched."
-    ];
-
     const levels = [
       {
         id: 1,
@@ -459,6 +451,7 @@
     const rewardOverlay = document.getElementById("rewardOverlay");
     const rewardClaimBtn = document.getElementById("rewardClaimBtn");
     const bubbleEl = document.getElementById("errorBubble");
+    const bubbleEl = document.getElementById("witchBubble");
 
     function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -519,6 +512,12 @@
       bubbleEl.classList.add("show");
       clearTimeout(showErrorBubble._hide);
       showErrorBubble._hide = setTimeout(() => bubbleEl.classList.remove("show"), ms);
+    function showBubble(text, ms = 3300) {
+      if (!bubbleEl) return;
+      bubbleEl.textContent = text;
+      bubbleEl.classList.add("show");
+      clearTimeout(showBubble._hide);
+      showBubble._hide = setTimeout(() => bubbleEl.classList.remove("show"), ms);
     }
 
     function registerMistake() {
@@ -526,6 +525,7 @@
       updateHUD();
       playWrong();
       showErrorBubble();
+      showBubble(pick(witchLines.wrong));
     }
 
     function showMushroomReward(onClaimCallback) {
@@ -545,6 +545,7 @@
       achievementTextEl.textContent = level.achievementText;
       overlay.classList.remove("hidden");
       playAchievement();
+      if (Math.random() < 0.85) showBubble(pick(witchLines.achievement));
       updateHUD();
     }
 
@@ -566,6 +567,7 @@
       const delay = 18000 + Math.random() * 17000;
       state.tauntTimer = setTimeout(() => {
         if (state.screen === "level") {
+          showBubble(pick(witchLines.random));
           scheduleRandomTaunt();
         }
       }, delay);
@@ -619,6 +621,7 @@
       function submitPassword() {
         const value = input.value.trim().toLowerCase();
         if (value === "allentown") {
+        if (value === "center valley") {
           localStorage.setItem("loveQuestUnlocked", "true");
           state.unlocked = true;
           status.textContent = "ACCESS GRANTED";
