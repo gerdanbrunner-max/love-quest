@@ -447,7 +447,7 @@
         storyteller: "Berlin passed. And with it, the illusion of coincidence. After that chapter, it became increasingly difficult for Captain America and the Queen of Mushrooms to pretend this was temporary. They attempted resistance. Dramatically. Occasionally convincingly. Yet an invisible string tugged between them. It stretched across New York, Croatia, Vilnius, Milan, San Francisco, and Los Angeles. Airports witnessed reunions. Screens glowed deep into the night. The Witch attempted to knot the thread. Fate tightened it instead.",
         prompt: "During the era of distance and devotion, what sustained the bond between Cozy Boy and his Princess Wife across oceans and time zones?",
         type: "single",
-        options: ["Frogging", "All of the above", "Never stopping Instagram messages", "Frequent flyer miles"],
+        options: ["Frequent flyer miles", "Never stopping Instagram messages", "Frogging", "All of the above"],
         correct: "All of the above",
         achievementTitle: "DISTANCE SPELL RESISTED",
         achievementText: "Miles were defeated. Thumbs proved legendary."
@@ -455,8 +455,14 @@
       {
         id: 4,
         title: "The Dunes of Nida",
-        storyteller: "The Storyteller travels north to the windswept dunes of Nida, beloved refuge of the Princess Wife. There, beneath open sky and Baltic wind, the Queen of Mushrooms fell asleep in serene triumph. When she awoke, she was cold, confused, and momentarily betrayed by the elements. The Witch smirked in the distance, pleased with the chill she had conjured. Only the true Hero would remember the exact words spoken in that sleepy prophecy.",
-        prompt: "In the summer of 2024, in Nida, the Princess Wife awoke cold and confused and spoke a short phrase. What were her exact words?",
+        storyteller: `The Storyteller journeys with the couple to the windswept dunes of Nida, beloved refuge of the Princess Wife and a land the Witch considers far too romantic for her liking.
+
+By day, the Hero and the Queen of Mushrooms moved through their quest with cheerful devotion: beer was raised in celebration, and fried bread was consumed — a local delicacy previously unknown to King Juicy Booty, who approached it with the wide-eyed reverence of a man discovering sacred cuisine.
+
+They explored Tahoe-like forests and wandered the trails by the lagoon, where sunlight filtered through green hush and the world felt unusually enchanted. To deepen the beauty of the mission, the couple took a few mushrooms and watched the landscape turn even more mythic. The Witch lurked at the edge of this joy, offended by how easily the ordinary became magical.
+
+As evening arrived, Cozy Boy and his Princess Wife returned to their humble quarters, wind-touched and content — unaware that a sleepy prophecy was waiting to be spoken.`,
+        prompt: "After this eventful day in Nida, the Princess Wife fell asleep, then awoke cold and confused, repeating a short phrase. What were her exact words?",
         type: "single",
         options: ["man linksma", "man karšta", "man šalta", "man nuobodu"],
         correct: "man šalta",
@@ -481,7 +487,6 @@
         prompt: "On what date did Captain America and the Queen of Mushrooms stand in the Ever After Chapel and hear love described as a perfect circle?",
         type: "input",
         accepted: ["august 24", "august 24th", "aug 24", "8/24", "08/24", "august 24 2025", "august 24, 2025", "8/24/2025", "08/24/2025"],
-        options: ["August 24 2025", "8/24", "Aug 24", "08/24/2025"],
         achievementTitle: "THE CIRCLE SERMON SURVIVED",
         achievementText: "Destiny described geometry. Love persisted."
       },
@@ -489,7 +494,7 @@
         id: 7,
         title: "The Cosy Feast of Destiny",
         storyteller: "The Storyteller closes the final chapter not with thunder, but with warmth. The Hero and the Princess Wife have found their happily ever after. Not the kind carved in marble, but the kind built quietly — dish by dish, load by load, evening by evening. They are building their cozy home together. They are happy in the mundane. In never-ending dishes and laundry. In making food side by side. In reading quietly. In long walks. In cracking — so much cracking. They know each other’s favorite foods without asking. They speak each other’s language without translating. They finish each other’s thoughts, sentences, and occasionally snacks. Slowly, steadily, they are turning into each other… merging into one unstoppable cozy blop. The Witch watches from afar, baffled and mildly offended that joy can be found in such ordinary magic. And still — for all its simplicity — there is a ritual that seals it every time.",
-        prompt: "The perfect night-in presents itself to the couple. Shrimp tacos from Sunset Cantina. Enchiladas from Celia’s by the Beach. Cold beer opened. The Pitt glowing on the screen. When destiny aligns in this sacred domestic ritual, what phrase erupts from the Hero?",
+        prompt: "The perfect night-in presents itself to the couple. Shrimp tacos from Sunset Cantina. Enchiladas from Celia’s by the Beach. Cold beer opened. The Pitt glowing on the screen. When destiny aligns in this sacred domestic ritual, what phrase erupts from Haban and the Princess Wife?",
         type: "single",
         options: ["Lovely jubbly hubby", "Hell fucking yeah", "Give me that sweet sweet loving", "I already watched S02E06"],
         correct: "Hell fucking yeah",
@@ -851,7 +856,7 @@
     function renderSingle(level) {
       renderStagedTrial({
         title: `Trial ${level.id}: ${level.title || "The Storyteller Speaks"}` ,
-        storytellerParagraphs: [level.storyteller || `The Storyteller narrows ancient eyes at ${state.currentHero}, while ${state.currentWife} awaits rescue.`],
+        storytellerParagraphs: level.storyteller || [`The Storyteller narrows ancient eyes at ${state.currentHero}, while ${state.currentWife} awaits rescue.`],
         questionText: level.prompt,
         buildOptions: (host) => {
           const options = level.options.map((opt, i) => `
@@ -875,7 +880,7 @@
     function renderMulti(level) {
       renderStagedTrial({
         title: `Trial ${level.id}: ${level.title || "Double Truth"}` ,
-        storytellerParagraphs: [level.storyteller || `${state.currentHero} must deliver precision before the Witch writes another smug note.`],
+        storytellerParagraphs: level.storyteller || [`${state.currentHero} must deliver precision before the Witch writes another smug note.`],
         questionText: level.prompt,
         buildOptions: (host) => {
           const rows = level.options.map((opt, i) => `
@@ -902,7 +907,7 @@
     function renderInput(level) {
       renderStagedTrial({
         title: `Trial ${level.id}: ${level.title || "Geometry of Destiny"}` ,
-        storytellerParagraphs: [level.storyteller || "The Storyteller studies the parchment and waits for precision."],
+        storytellerParagraphs: level.storyteller || ["The Storyteller studies the parchment and waits for precision."],
         questionText: level.prompt,
         buildOptions: (host) => {
           const optionRows = (level.options || []).map((opt, i) => `<div class="option">${String.fromCharCode(65 + i)}) ${opt}</div>`).join("");
@@ -941,7 +946,7 @@
       screenEl.innerHTML = `
         <h1>YOU WIN ❤️</h1>
         <p>The Storyteller declares that Princess Wife has been rescued from the Witch of Long Distance. Cozy blankets shall be restored to the realm.</p>
-        <p><strong>Love Mushrooms:</strong> ${state.mushrooms}/6</p>
+        <p><strong>Love Mushrooms:</strong> ${state.mushrooms}/7</p>
         <p><strong>Mistakes:</strong> ${state.mistakes}</p>
         <p><strong>Rank:</strong> ${rankForMistakes(state.mistakes)}</p>
         <button id="claimBtn">CLAIM THE PRINCESS</button>
@@ -950,7 +955,8 @@
           <p>In San Francisco, the Hero guards the cozy kingdom and rehearses victory dances with only moderate dignity.</p>
           <p>In Vilnius, the Princess Wife reigns across time zones, proving once again that distance is no match for stubborn romance and chaotic humor.</p>
           <p>When February 27 arrives, reunion bells shall ring, snacks shall be over-ordered, and the Witch shall be forced to watch from very far away.</p>
-          <p>Love remains undefeated. Even when the Hero is, occasionally, dramatically confused.</p>
+          <p>Love remains undefeated.</p>
+          ${state.mistakes > 0 ? `<p>Even when the Hero is, occasionally, dramatically confused (${state.mistakes} times).</p>` : ""}
         </div>
       `;
       document.getElementById("claimBtn").onclick = () => {
