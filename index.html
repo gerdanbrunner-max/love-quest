@@ -790,21 +790,62 @@ The challenge has been issued.`;
 
     function renderPassword() {
       rotateNames();
+      const passwordStory = `The Storyteller lowers their voice.
+
+Before the Love Mushrooms. Before Berlin. Before invisible strings and dramatic sighs.
+
+There was… a word.
+
+On the very first day their Instagram banter sparked to life, the Princess Wife offered the Hero a gift from her homeland — a Lithuanian word, soft and mischievous.
+
+He repeated it carefully. Probably mispronounced it slightly. But he remembered. And he never stopped using it.
+
+Now the Witch of Long Distance has wrapped the entrance to the Enchanted Memory Forest in thorns and spellwork.
+
+‘The one who remembers the first word,’ she whispers, ‘may enter.’
+
+The gate glows faintly. It waits.`;
       screenEl.innerHTML = `
-        <h2>Quest Zero: Prove the Hero</h2>
-        <p class="level-meta">The Storyteller watches as ${state.currentHero} approaches the gate.</p>
-        <p>The Storyteller demands the founding city of the legend.</p>
-        <input id="passInput" type="text" placeholder="enter password" autocomplete="off" />
-        <div><button id="passBtn">Unlock Quest</button></div>
-        <div id="passStatus" class="status"></div>
+        <h2>QUEST 0: THE LOCKED GATE OF THE ENCHANTED MEMORY FOREST</h2>
+        <div id="passStory" class="story-paper no-divider hidden"></div>
+        <div id="passPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
+        <div id="passQuestionWrap" class="hidden">
+          <p class="typed-question">Whisper the first Lithuanian word ever taught to the Hero:</p>
+          <div class="options">
+            <input id="passInput" type="text" placeholder="enter password" autocomplete="off" />
+            <div><button id="passBtn">UNLOCK THE GATE</button></div>
+          </div>
+          <div id="passStatus" class="status"></div>
+        </div>
       `;
 
+      const storyEl = document.getElementById("passStory");
+      const promptEl = document.getElementById("passPrompt");
+      const questionWrap = document.getElementById("passQuestionWrap");
       const input = document.getElementById("passInput");
       const status = document.getElementById("passStatus");
+      const flow = { stage: "title", controller: null, onKeyDown: null };
+
+      function revealQuestion() {
+        flow.stage = "question";
+        questionWrap.classList.remove("hidden");
+        input.focus();
+      }
+
+      function startPasswordStory() {
+        flow.stage = "story_typing";
+        promptEl.classList.add("hidden");
+        storyEl.classList.remove("hidden");
+        storyEl.innerHTML = "";
+        flow.controller = typewriterParagraphs(storyEl, passwordStory, 22, () => {
+          flow.controller = null;
+          revealQuestion();
+        });
+      }
 
       function submitPassword() {
         const value = input.value.trim().toLowerCase();
-        if (value === "allentown") {
+        if (value === "kaciukas") {
           state.unlocked = true;
           status.textContent = "ACCESS GRANTED";
           status.className = "status good";
@@ -815,7 +856,6 @@ The challenge has been issued.`;
             render();
           }, 550);
         } else {
-          registerMistake();
           status.textContent = "ACCESS DENIED";
           status.className = "status bad";
           input.classList.remove("shake");
@@ -824,9 +864,27 @@ The challenge has been issued.`;
         }
       }
 
+      const onKeyDown = (e) => {
+        if (e.code !== "Space") return;
+        const active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+        e.preventDefault();
+
+        if (flow.controller && flow.controller.typing) {
+          flow.controller.skip();
+          return;
+        }
+
+        if (flow.stage === "title") {
+          startPasswordStory();
+        }
+      };
+
       document.getElementById("passBtn").onclick = submitPassword;
       input.addEventListener("keydown", (e) => { if (e.key === "Enter") submitPassword(); });
-      input.focus();
+      flow.onKeyDown = onKeyDown;
+      state.trialFlow = flow;
+      document.addEventListener("keydown", onKeyDown);
     }
 
     function clearTrialFlow() {
