@@ -354,6 +354,17 @@
       line-height: 1.45;
     }
 
+
+    .final-stats p {
+      margin: 0;
+      line-height: 1.45;
+      color: var(--cream);
+    }
+
+    .final-stats p + p {
+      margin-top: 10px;
+    }
+
     .level-meta {
       margin: 0 0 8px;
       color: #ffb9de;
@@ -1163,11 +1174,11 @@ And now the Princess Wife speaks not as legend, but as herself: she loves her Ha
         <div id="finalPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
         <div id="finalStats" class="hidden">
           <p class="typed-question"><strong>Final Quest Stats</strong></p>
-          <div class="options">
-            <div class="option"><strong>Love 🍄 Collected:</strong> ${state.mushrooms} / 7</div>
-            <div class="option"><strong>Witch Satisfaction Index:</strong> ${state.mistakes}</div>
-            <div class="option"><strong>Rank:</strong> ${rank.title}</div>
-            <div class="option">${rank.explanation}</div>
+          <div class="final-stats">
+            <p><strong>Love 🍄 Collected:</strong> ${state.mushrooms} / 7</p>
+            <p><strong>Witch Satisfaction Index:</strong> ${state.mistakes}</p>
+            <p><strong>Rank:</strong> ${rank.title}</p>
+            <p>${rank.explanation}</p>
           </div>
         </div>
       `;
