@@ -281,6 +281,47 @@
       pointer-events: none;
     }
 
+    .space-prompt {
+      text-align: center;
+      margin: 12px 0;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #ffb9de;
+      animation: promptFlash 0.9s steps(2, end) infinite;
+    }
+
+    @keyframes promptFlash {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0.2; }
+    }
+
+    .story-paper {
+      background: rgba(255, 241, 208, 0.09);
+      border: 3px solid var(--cream);
+      box-shadow: 3px 3px 0 #000;
+      padding: 12px;
+      margin: 10px 0 14px;
+      min-height: 74px;
+    }
+
+    .story-paper p {
+      margin: 0;
+      line-height: 1.45;
+      color: var(--cream);
+    }
+
+    .story-paper p + p {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(255, 241, 208, 0.6);
+    }
+
+    .typed-question {
+      min-height: 48px;
+      margin: 0 0 12px;
+      line-height: 1.45;
+    }
+
     .level-meta {
       margin: 0 0 8px;
       color: #ffb9de;
@@ -449,7 +490,8 @@
       currentWife: "",
       tauntTimer: null,
       letterOpen: false,
-      audioCtx: null
+      audioCtx: null,
+      trialFlow: null
     };
 
     const screenEl = document.getElementById("screen");
@@ -645,75 +687,225 @@
       input.focus();
     }
 
-    function renderSingle(level) {
-      const options = level.options.map((opt, i) => `
-        <button class="option" data-answer="${opt.replace(/"/g, '&quot;')}">${String.fromCharCode(65 + i)}) ${opt}</button>
-      `).join("");
-      screenEl.innerHTML = `
-        <h2>Trial ${level.id}: The Storyteller Speaks</h2>
-        <p class="level-meta">The Storyteller narrows ancient eyes at ${state.currentHero}, while ${state.currentWife} awaits rescue.</p>
-        <p>${level.prompt}</p>
-        <div class="options">${options}</div>
-      `;
-      screenEl.querySelectorAll(".option").forEach(btn => {
-        btn.onclick = () => {
-          const answer = btn.dataset.answer;
-          if (answer === level.correct) {
-            answerCorrect(level);
-          } else {
-            registerMistake();
+    function clearTrialFlow() {
+      if (state.trialFlow && state.trialFlow.onKeyDown) {
+        document.removeEventListener("keydown", state.trialFlow.onKeyDown);
+      }
+      state.trialFlow = null;
+    }
+
+    function typewriterText(el, text, speed, onDone) {
+      const controller = { typing: true, skipRequested: false, timer: null };
+      let i = 0;
+      el.textContent = "";
+      function finishNow() {
+        if (!controller.typing) return;
+        if (controller.timer) clearTimeout(controller.timer);
+        el.textContent = text;
+        controller.typing = false;
+        onDone();
+      }
+      function tick() {
+        if (controller.skipRequested) return finishNow();
+        i += 1;
+        el.textContent = text.slice(0, i);
+        if (i >= text.length) {
+          controller.typing = false;
+          onDone();
+          return;
+        }
+        controller.timer = setTimeout(tick, speed);
+      }
+      controller.skip = () => { controller.skipRequested = true; };
+      tick();
+      return controller;
+    }
+
+    function typewriterParagraphs(container, paragraphs, speed, onDone) {
+      const parts = Array.isArray(paragraphs) ? paragraphs : String(paragraphs).split("\n\n");
+      const pEls = parts.map(() => {
+        const p = document.createElement("p");
+        p.textContent = "";
+        container.appendChild(p);
+        return p;
+      });
+      const controller = { typing: true, skipRequested: false, timer: null };
+      let pIndex = 0;
+      let cIndex = 0;
+      function finishNow() {
+        if (!controller.typing) return;
+        if (controller.timer) clearTimeout(controller.timer);
+        pEls.forEach((p, idx) => { p.textContent = parts[idx]; });
+        controller.typing = false;
+        onDone();
+      }
+      function tick() {
+        if (controller.skipRequested) return finishNow();
+        const txt = parts[pIndex] || "";
+        cIndex += 1;
+        pEls[pIndex].textContent = txt.slice(0, cIndex);
+        if (cIndex >= txt.length) {
+          pIndex += 1;
+          cIndex = 0;
+          if (pIndex >= parts.length) {
+            controller.typing = false;
+            onDone();
+            return;
           }
-        };
+        }
+        controller.timer = setTimeout(tick, speed);
+      }
+      controller.skip = () => { controller.skipRequested = true; };
+      tick();
+      return controller;
+    }
+
+    function renderStagedTrial({ title, storytellerParagraphs, questionText, buildOptions }) {
+      clearTrialFlow();
+      screenEl.innerHTML = `
+        <h2>${title}</h2>
+        <div id="trialPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
+        <div id="trialStory" class="story-paper hidden"></div>
+        <p id="trialQuestion" class="typed-question hidden"></p>
+        <div id="trialOptions" class="hidden"></div>
+      `;
+
+      const promptEl = document.getElementById("trialPrompt");
+      const storyEl = document.getElementById("trialStory");
+      const questionEl = document.getElementById("trialQuestion");
+      const optionsEl = document.getElementById("trialOptions");
+      const flow = { stage: "header", controller: null, onKeyDown: null };
+
+      function setPrompt(show) {
+        promptEl.classList.toggle("hidden", !show);
+      }
+
+      function startStoryStage() {
+        flow.stage = "story_typing";
+        setPrompt(false);
+        storyEl.classList.remove("hidden");
+        storyEl.innerHTML = "";
+        flow.controller = typewriterParagraphs(storyEl, storytellerParagraphs, 22, () => {
+          flow.controller = null;
+          flow.stage = "story_done";
+          setPrompt(true);
+        });
+      }
+
+      function startQuestionStage() {
+        flow.stage = "question_typing";
+        setPrompt(false);
+        questionEl.classList.remove("hidden");
+        flow.controller = typewriterText(questionEl, questionText, 22, () => {
+          flow.controller = null;
+          flow.stage = "options";
+          optionsEl.classList.remove("hidden");
+          buildOptions(optionsEl);
+        });
+      }
+
+      const onKeyDown = (e) => {
+        if (e.code !== "Space") return;
+        const active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+        if (flow.stage === "options") return;
+        e.preventDefault();
+
+        if (flow.controller && flow.controller.typing) {
+          flow.controller.skip();
+          return;
+        }
+
+        if (flow.stage === "header") {
+          startStoryStage();
+        } else if (flow.stage === "story_done") {
+          startQuestionStage();
+        }
+      };
+
+      flow.onKeyDown = onKeyDown;
+      state.trialFlow = flow;
+      document.addEventListener("keydown", onKeyDown);
+    }
+
+    function renderSingle(level) {
+      renderStagedTrial({
+        title: `Trial ${level.id}: The Storyteller Speaks`,
+        storytellerParagraphs: [`The Storyteller narrows ancient eyes at ${state.currentHero}, while ${state.currentWife} awaits rescue.`],
+        questionText: level.prompt,
+        buildOptions: (host) => {
+          const options = level.options.map((opt, i) => `
+            <button class="option" data-answer="${opt.replace(/"/g, '&quot;')}">${String.fromCharCode(65 + i)}) ${opt}</button>
+          `).join("");
+          host.innerHTML = `<div class="options">${options}</div>`;
+          host.querySelectorAll(".option").forEach(btn => {
+            btn.onclick = () => {
+              const answer = btn.dataset.answer;
+              if (answer === level.correct) {
+                answerCorrect(level);
+              } else {
+                registerMistake();
+              }
+            };
+          });
+        }
       });
     }
 
     function renderMulti(level) {
-      const rows = level.options.map((opt, i) => `
-        <label class="option"><input type="checkbox" value="${opt.replace(/"/g, '&quot;')}" /> ${String.fromCharCode(65 + i)}) ${opt}</label>
-      `).join("");
-      screenEl.innerHTML = `
-        <h2>Trial ${level.id}: Double Truth</h2>
-        <p class="level-meta">${state.currentHero} must deliver precision before the Witch writes another smug note.</p>
-        <p>${level.prompt}</p>
-        <div class="options">${rows}</div>
-        <button id="submitMulti">Seal the Offerings</button>
-      `;
-      document.getElementById("submitMulti").onclick = () => {
-        const selected = [...screenEl.querySelectorAll('input[type="checkbox"]:checked')].map(c => c.value);
-        const sortedA = [...selected].sort().join("|");
-        const sortedB = [...level.correctSet].sort().join("|");
-        if (sortedA === sortedB) {
-          answerCorrect(level);
-        } else {
-          registerMistake();
+      renderStagedTrial({
+        title: `Trial ${level.id}: Double Truth`,
+        storytellerParagraphs: [`${state.currentHero} must deliver precision before the Witch writes another smug note.`],
+        questionText: level.prompt,
+        buildOptions: (host) => {
+          const rows = level.options.map((opt, i) => `
+            <label class="option"><input type="checkbox" value="${opt.replace(/"/g, '&quot;')}" /> ${String.fromCharCode(65 + i)}) ${opt}</label>
+          `).join("");
+          host.innerHTML = `
+            <div class="options">${rows}</div>
+            <button id="submitMulti">Seal the Offerings</button>
+          `;
+          host.querySelector("#submitMulti").onclick = () => {
+            const selected = [...host.querySelectorAll('input[type="checkbox"]:checked')].map(c => c.value);
+            const sortedA = [...selected].sort().join("|");
+            const sortedB = [...level.correctSet].sort().join("|");
+            if (sortedA === sortedB) {
+              answerCorrect(level);
+            } else {
+              registerMistake();
+            }
+          };
         }
-      };
+      });
     }
 
     function renderInput(level) {
-      const cutscene = level.cutscene.map(line => `<p>${line}</p>`).join("");
-      screenEl.innerHTML = `
-        <h2>Trial ${level.id}: Geometry of Destiny</h2>
-        <div class="rules">${cutscene}</div>
-        <p>${level.prompt}</p>
-        <input id="dateInput" type="text" placeholder="type date" autocomplete="off" />
-        <div><button id="dateBtn">Offer Date</button></div>
-      `;
-      const dateInput = document.getElementById("dateInput");
-      function submitDate() {
-        const value = dateInput.value.trim().toLowerCase();
-        if (level.accepted.includes(value)) {
-          answerCorrect(level);
-        } else {
-          registerMistake();
-          dateInput.classList.remove("shake");
-          void dateInput.offsetWidth;
-          dateInput.classList.add("shake");
+      renderStagedTrial({
+        title: `Trial ${level.id}: Geometry of Destiny`,
+        storytellerParagraphs: level.cutscene,
+        questionText: level.prompt,
+        buildOptions: (host) => {
+          host.innerHTML = `
+            <input id="dateInput" type="text" placeholder="type date" autocomplete="off" />
+            <div><button id="dateBtn">Offer Date</button></div>
+          `;
+          const dateInput = host.querySelector("#dateInput");
+          function submitDate() {
+            const value = dateInput.value.trim().toLowerCase();
+            if (level.accepted.includes(value)) {
+              answerCorrect(level);
+            } else {
+              registerMistake();
+              dateInput.classList.remove("shake");
+              void dateInput.offsetWidth;
+              dateInput.classList.add("shake");
+            }
+          }
+          host.querySelector("#dateBtn").onclick = submitDate;
+          dateInput.addEventListener("keydown", (e) => { if (e.key === "Enter") submitDate(); });
+          dateInput.focus();
         }
-      }
-      document.getElementById("dateBtn").onclick = submitDate;
-      dateInput.addEventListener("keydown", (e) => { if (e.key === "Enter") submitDate(); });
-      dateInput.focus();
+      });
     }
 
     function rankForMistakes(m) {
@@ -759,6 +951,7 @@
     }
 
     function render() {
+      clearTrialFlow();
       updateHUD();
       scheduleRandomTaunt();
       if (state.screen === "intro") renderIntro();
