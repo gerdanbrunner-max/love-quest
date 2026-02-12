@@ -89,6 +89,7 @@
       line-height: 1.2;
       text-transform: uppercase;
       text-shadow: 2px 2px 0 var(--black);
+      text-align: center;
     }
 
     h1 { color: var(--pink); font-size: clamp(24px, 4vw, 42px); }
@@ -112,7 +113,8 @@
       font-weight: 700;
       text-transform: uppercase;
       cursor: pointer;
-      margin-top: 10px;
+      margin: 10px auto 0;
+      display: block;
       box-shadow: 0 4px 0 #7f1f56, 4px 4px 0 #000;
       transition: transform 0.08s;
     }
@@ -135,6 +137,7 @@
       padding: 12px;
       font-size: 15px;
       box-shadow: 3px 3px 0 #000;
+      margin: 0;
     }
 
     .option:hover { border-color: var(--pink); }
@@ -191,6 +194,16 @@
       width: 100%;
       background: #1a0b21;
       border: 4px solid var(--cream);
+      box-shadow: 0 0 0 4px #000, 0 0 0 8px var(--pink);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .error-card {
+      max-width: 560px;
+      width: 100%;
+      background: #220c24;
+      border: 4px solid var(--danger);
       box-shadow: 0 0 0 4px #000, 0 0 0 8px var(--pink);
       padding: 20px;
       text-align: center;
@@ -365,7 +378,7 @@
   <div class="hud">
     <span id="hudLevel">LEVEL 0/7</span>
     <span id="hudMushrooms">LOVE 🍄 COLLECTED x0</span>
-    <span id="hudMistakes">WITCH SATISFACTION GROWTH INDEX x0</span>
+    <span id="hudMistakes">WITCH SATISFACTION INDEX x0</span>
   </div>
 
   <div class="floaters" id="floaters"></div>
@@ -374,7 +387,13 @@
     <section id="screen" class="panel"></section>
   </main>
 
-  <div id="errorBubble" class="bubble error-bubble" aria-live="polite"></div>
+  <div id="errorOverlay" class="achievement-overlay hidden" aria-live="polite">
+    <div class="error-card">
+      <h3>Incorrect Answer</h3>
+      <p id="errorMessage"></p>
+      <p id="errorCount"></p>
+    </div>
+  </div>
 
   <div id="achievementOverlay" class="achievement-overlay hidden">
     <div class="achievement-card">
@@ -545,7 +564,9 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
     const achievementBtn = document.getElementById("achievementBtn");
     const rewardOverlay = document.getElementById("rewardOverlay");
     const rewardClaimBtn = document.getElementById("rewardClaimBtn");
-    const bubbleEl = document.getElementById("errorBubble");
+    const errorOverlay = document.getElementById("errorOverlay");
+    const errorMessageEl = document.getElementById("errorMessage");
+    const errorCountEl = document.getElementById("errorCount");
 
     function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -558,7 +579,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       const levelLabel = state.screen === "level" ? state.levelIndex + 1 : Math.min(state.levelIndex, 7);
       document.getElementById("hudLevel").textContent = `LEVEL ${levelLabel}/7`;
       document.getElementById("hudMushrooms").textContent = `LOVE 🍄 COLLECTED x${state.mushrooms}`;
-      document.getElementById("hudMistakes").textContent = `WITCH SATISFACTION GROWTH INDEX x${state.mistakes}`;
+      document.getElementById("hudMistakes").textContent = `WITCH SATISFACTION INDEX x${state.mistakes}`;
     }
 
     function initAudio() {
@@ -599,20 +620,20 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       [523, 659, 784, 1046, 1318, 1568].forEach((f, i) => tone(f, 0.14, "square", 0.05, i * 0.08));
     }
 
-    function showErrorBubble(messageOptional, ms = 3000) {
-      if (!bubbleEl) return;
-      const text = messageOptional || pick(errorBubbleMessages);
-      bubbleEl.textContent = text;
-      bubbleEl.classList.add("show");
-      clearTimeout(showErrorBubble._hide);
-      showErrorBubble._hide = setTimeout(() => bubbleEl.classList.remove("show"), ms);
+    function showErrorModal(messageOptional, count, ms = 3000) {
+      if (!errorOverlay) return;
+      errorMessageEl.textContent = messageOptional || pick(errorBubbleMessages);
+      errorCountEl.textContent = `WITCH SATISFACTION INDEX: ${count}`;
+      errorOverlay.classList.remove("hidden");
+      clearTimeout(showErrorModal._hide);
+      showErrorModal._hide = setTimeout(() => errorOverlay.classList.add("hidden"), ms);
     }
 
     function registerMistake() {
       state.mistakes += 1;
       updateHUD();
       playWrong();
-      showErrorBubble();
+      showErrorModal(undefined, state.mistakes);
     }
 
     function showMushroomReward(onClaimCallback) {
@@ -685,61 +706,37 @@ The challenge has been issued.`;
       screenEl.innerHTML = `
         <h1 class="intro-title-cinematic">PROLOGUE: THE WITCH RETURNS</h1>
         <div id="introStory" class="story-paper no-divider hidden"></div>
-        <div id="introPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
+        <button id="introAcceptBtn">ACCEPT THE CHALLENGE AND SAVE PRINCESS WIFE</button>
       `;
 
       const storyEl = document.getElementById("introStory");
-      const promptEl = document.getElementById("introPrompt");
-      const flow = { stage: "title", controller: null, onKeyDown: null };
+      const introAcceptBtn = document.getElementById("introAcceptBtn");
+      const flow = { stage: "story_typing", controller: null, onKeyDown: null };
 
-      function setPrompt(show) {
-        promptEl.classList.toggle("hidden", !show);
-      }
+      storyEl.classList.remove("hidden");
+      storyEl.innerHTML = "";
+      flow.controller = typewriterParagraphs(storyEl, introStory, 22, () => {
+        flow.controller = null;
+        flow.stage = "story_done";
+      });
 
-      function startStory() {
-        flow.stage = "story_typing";
-        setPrompt(false);
-        storyEl.classList.remove("hidden");
-        storyEl.innerHTML = "";
-        flow.controller = typewriterParagraphs(storyEl, introStory, 22, () => {
-          flow.controller = null;
-          flow.stage = "story_done";
-          setPrompt(true);
-        });
-      }
-
-      const onKeyDown = (e) => {
-        if (e.code !== "Space") return;
-        const active = document.activeElement;
-        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
-        e.preventDefault();
-
-        if (flow.controller && flow.controller.typing) {
-          flow.controller.skip();
-          return;
-        }
-
-        if (flow.stage === "title") {
-          startStory();
-        } else if (flow.stage === "story_done") {
-          state.screen = state.unlocked ? "level" : "password";
-          render();
-        }
+      introAcceptBtn.onclick = () => {
+        if (flow.controller && flow.controller.typing) flow.controller.skip();
+        state.screen = state.unlocked ? "level" : "password";
+        render();
       };
 
-      flow.onKeyDown = onKeyDown;
       state.trialFlow = flow;
-      document.addEventListener("keydown", onKeyDown);
     }
 
     function renderPassword() {
       rotateNames();
       screenEl.innerHTML = `
-        <h2>Trial Zero: Prove the Hero</h2>
+        <h2>Quest Zero: Prove the Hero</h2>
         <p class="level-meta">The Storyteller watches as ${state.currentHero} approaches the gate.</p>
         <p>The Storyteller demands the founding city of the legend.</p>
         <input id="passInput" type="text" placeholder="enter password" autocomplete="off" />
-        <div><button id="passBtn">Unlock Trial</button></div>
+        <div><button id="passBtn">Unlock Quest</button></div>
         <div id="passStatus" class="status"></div>
       `;
 
@@ -918,7 +915,7 @@ The challenge has been issued.`;
 
     function renderSingle(level) {
       renderStagedTrial({
-        title: `Trial ${level.id}: ${level.title || "The Storyteller Speaks"}`,
+        title: `Quest ${level.id}: ${level.title || "The Storyteller Speaks"}`,
         storytellerParagraphs: level.storyteller || [`The Storyteller narrows ancient eyes at ${state.currentHero}, while ${state.currentWife} awaits rescue.`],
         questionText: level.prompt,
         noDivider: level.id === 4,
@@ -943,7 +940,7 @@ The challenge has been issued.`;
 
     function renderMulti(level) {
       renderStagedTrial({
-        title: `Trial ${level.id}: ${level.title || "Double Truth"}`,
+        title: `Quest ${level.id}: ${level.title || "Double Truth"}`,
         storytellerParagraphs: level.storyteller || [`${state.currentHero} must deliver precision before the Witch writes another smug note.`],
         questionText: level.prompt,
         buildOptions: (host) => {
@@ -970,7 +967,7 @@ The challenge has been issued.`;
 
     function renderInput(level) {
       renderStagedTrial({
-        title: `Trial ${level.id}: ${level.title || "Geometry of Destiny"}`,
+        title: `Quest ${level.id}: ${level.title || "Geometry of Destiny"}`,
         storytellerParagraphs: level.storyteller || ["The Storyteller studies the parchment and waits for precision."],
         questionText: level.prompt,
         buildOptions: (host) => {
