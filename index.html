@@ -550,7 +550,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       levelIndex: 0,
       mushrooms: 0,
       mistakes: 0,
-      unlocked: localStorage.getItem("loveQuestUnlocked") === "true",
+      unlocked: false,
       currentHero: "",
       currentWife: "",
       tauntTimer: null,
@@ -779,7 +779,7 @@ The challenge has been issued.`;
 
       introAcceptBtn.onclick = () => {
         if (flow.controller && flow.controller.typing) flow.controller.skip();
-        state.screen = state.unlocked ? "level" : "password";
+        state.screen = "password";
         render();
       };
 
@@ -805,7 +805,6 @@ The challenge has been issued.`;
       function submitPassword() {
         const value = input.value.trim().toLowerCase();
         if (value === "allentown") {
-          localStorage.setItem("loveQuestUnlocked", "true");
           state.unlocked = true;
           status.textContent = "ACCESS GRANTED";
           status.className = "status good";
@@ -1103,27 +1102,34 @@ And now the Princess Wife speaks not as legend, but as herself: she loves her Ha
       screenEl.innerHTML = `
         <h1>THE KING JUICY BOOTY SAVES THE PRINCESS WIFE</h1>
         <div id="finalStory" class="story-paper no-divider hidden"></div>
-        <div id="finalPrompt" class="space-prompt hidden">PRESS SPACE TO CONTINUE</div>
-        <div id="finalStats" class="story-paper no-divider hidden">
-          <p><strong>Love 🍄 Collected:</strong> ${state.mushrooms} / 7</p>
-          <p><strong>Witch Satisfaction Index:</strong> ${state.mistakes}</p>
-          <p><strong>Rank:</strong> ${rank.title}</p>
-          <p>${rank.explanation}</p>
+        <div id="finalPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
+        <div id="finalStats" class="hidden">
+          <p class="typed-question"><strong>Final Quest Stats</strong></p>
+          <div class="options">
+            <div class="option"><strong>Love 🍄 Collected:</strong> ${state.mushrooms} / 7</div>
+            <div class="option"><strong>Witch Satisfaction Index:</strong> ${state.mistakes}</div>
+            <div class="option"><strong>Rank:</strong> ${rank.title}</div>
+            <div class="option">${rank.explanation}</div>
+          </div>
         </div>
       `;
 
       const storyEl = document.getElementById("finalStory");
       const promptEl = document.getElementById("finalPrompt");
       const statsEl = document.getElementById("finalStats");
-      const flow = { stage: "story_typing", controller: null, onKeyDown: null };
+      const flow = { stage: "title", controller: null, onKeyDown: null };
 
-      storyEl.classList.remove("hidden");
-      storyEl.innerHTML = "";
-      flow.controller = typewriterParagraphs(storyEl, finalStory, 22, () => {
-        flow.controller = null;
-        flow.stage = "story_done";
-        promptEl.classList.remove("hidden");
-      });
+      function startFinalStory() {
+        flow.stage = "story_typing";
+        promptEl.classList.add("hidden");
+        storyEl.classList.remove("hidden");
+        storyEl.innerHTML = "";
+        flow.controller = typewriterParagraphs(storyEl, finalStory, 22, () => {
+          flow.controller = null;
+          flow.stage = "story_done";
+          promptEl.classList.remove("hidden");
+        });
+      }
 
       const onKeyDown = (e) => {
         if (e.code !== "Space") return;
@@ -1134,6 +1140,11 @@ And now the Princess Wife speaks not as legend, but as herself: she loves her Ha
 
         if (flow.controller && flow.controller.typing) {
           flow.controller.skip();
+          return;
+        }
+
+        if (flow.stage === "title") {
+          startFinalStory();
           return;
         }
 
