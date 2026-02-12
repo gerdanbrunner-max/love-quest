@@ -316,6 +316,34 @@
       border-top: 1px dashed rgba(255, 241, 208, 0.6);
     }
 
+    .story-paper.no-divider p + p {
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .intro-title-cinematic {
+      animation: introTitleIn 360ms steps(4, end);
+      transform-origin: center;
+    }
+
+    @keyframes introTitleIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .witch-taunt {
+      margin: 8px 0 12px;
+      color: #ffb9de;
+      font-weight: 700;
+      opacity: 0;
+      transform: translateY(4px);
+      animation: tauntIn 260ms ease forwards;
+    }
+
+    @keyframes tauntIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .typed-question {
       min-height: 48px;
       margin: 0 0 12px;
@@ -345,8 +373,8 @@
 <body class="scanlines">
   <div class="hud">
     <span id="hudLevel">LEVEL 0/7</span>
-    <span id="hudMushrooms">🍄 x0</span>
-    <span id="hudMistakes">WITCH x0</span>
+    <span id="hudMushrooms">LOVE 🍄 COLLECTED x0</span>
+    <span id="hudMistakes">WITCH SATISFACTION GROWTH INDEX x0</span>
   </div>
 
   <div class="floaters" id="floaters"></div>
@@ -538,8 +566,8 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
     function updateHUD() {
       const levelLabel = state.screen === "level" ? state.levelIndex + 1 : Math.min(state.levelIndex, 7);
       document.getElementById("hudLevel").textContent = `LEVEL ${levelLabel}/7`;
-      document.getElementById("hudMushrooms").textContent = `🍄 x${state.mushrooms}`;
-      document.getElementById("hudMistakes").textContent = `WITCH x${state.mistakes}`;
+      document.getElementById("hudMushrooms").textContent = `LOVE 🍄 COLLECTED x${state.mushrooms}`;
+      document.getElementById("hudMistakes").textContent = `WITCH SATISFACTION GROWTH INDEX x${state.mistakes}`;
     }
 
     function initAudio() {
@@ -646,28 +674,98 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
     }
 
     function renderIntro() {
-      rotateNames();
+      clearTrialFlow();
+      const introStory = `The Storyteller begins where all good legends do: with two people who should never have found each other — and did anyway.
+
+Against the odds, the Hero and the Princess Wife endured distance, time zones, and the slow ache of missing each other. They returned again and again, choosing the same person in different cities, different seasons, different versions of themselves.
+
+Eventually, they built something quieter and stronger than drama: a shared life. A cozy home. Ordinary magic. Dishes and laundry. Cooking side by side. Reading. Walks. Cracking — so much cracking. The kind of love that does not need fireworks to be real.
+
+But the Witch of Long Distance despises a happy ending. She feeds on delayed flights and rescheduled plans. She cannot tolerate the peace of two people who would rather do the mundane together than anything apart.
+
+So the Witch struck again.
+
+With a swirl of petty power and impeccable timing, she snatched the Princess Wife once more — and dared the Hero to prove he truly knows her.`;
+      const introRules = `RULES OF THE QUEST:
+To rescue the Princess Wife, the Hero (also known as Mr. Haban, Cozy Boy, Juicy Booty, Husband, and Captain America) must collect 7 Love Mushrooms.
+
+Love Mushrooms are earned by completing Trials about the couple’s legend.
+Wrong answers increase Witch Satisfaction (mistakes), which the Witch tracks with great enthusiasm.
+
+Press SPACE to continue through the story. Answer carefully. The Witch is dramatic, petty, and counting.`;
+
       screenEl.innerHTML = `
-        <h1>Love Quest: The Snatching of the Queen of Mushrooms</h1>
-        <p>Long ago, in a distant land known for its charm and respectable levels of excitement, two strangers met beneath corporate chandeliers. The Hero listened as a bold young woman revealed a peculiar obsession. Laughter followed, and destiny shifted.</p>
-        <p>Later, in a grand European capital pulsing with history and rhythm, sacred offerings were exchanged and the legend deepened.</p>
-        <p>They crossed oceans. They endured distance. In late summer, beneath neon lights and theatrical vows about eternity and geometry, they bound their fates.</p>
-        <p>They built a cozy kingdom near the western sea.</p>
-        <p>But on the eve of Valentine’s Day, as the Queen of Mushrooms journeyed far across continents, the Witch of Long Distance descended.</p>
-        <p>With a swirl of pixel smoke, she declared: <em>“Let the Hero prove his love… by recalling the details.”</em></p>
-        <p>${wifeNames.join(", ")}, Scolder of Non-Cozy Boys — was snatched away.</p>
-        <div class="rules">
-          <strong>Rules of the Quest:</strong>
-          <p>To rescue Princess Wife, the Hero must collect 7 Love Mushrooms by answering Trials about the couple’s legend.</p>
-          <p>Wrong answers increase Witch Satisfaction.</p>
-          <p>The Witch cannot be bribed.</p>
-        </div>
-        <button id="startBtn">YES, SAVE WIFE</button>
+        <h1 class="intro-title-cinematic">PROLOGUE: THE WITCH RETURNS</h1>
+        <div id="introStory" class="story-paper hidden"></div>
+        <div id="introRules" class="story-paper hidden"></div>
+        <p id="introTaunt" class="witch-taunt hidden"></p>
+        <div id="introPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
+        <button id="startBtn" class="hidden">YES, SAVE WIFE</button>
       `;
-      document.getElementById("startBtn").onclick = () => {
+      playCorrect();
+
+      const storyEl = document.getElementById("introStory");
+      const rulesEl = document.getElementById("introRules");
+      const tauntEl = document.getElementById("introTaunt");
+      const promptEl = document.getElementById("introPrompt");
+      const startBtn = document.getElementById("startBtn");
+      const flow = { stage: "title", controller: null, onKeyDown: null };
+
+      function setPrompt(show) {
+        promptEl.classList.toggle("hidden", !show);
+      }
+
+      function startStory() {
+        flow.stage = "story_typing";
+        setPrompt(false);
+        storyEl.classList.remove("hidden");
+        storyEl.innerHTML = "";
+        flow.controller = typewriterParagraphs(storyEl, introStory, 22, () => {
+          flow.controller = null;
+          flow.stage = "story_done";
+          setPrompt(true);
+        });
+      }
+
+      function startRules() {
+        flow.stage = "rules_typing";
+        setPrompt(false);
+        rulesEl.classList.remove("hidden");
+        rulesEl.innerHTML = "";
+        flow.controller = typewriterParagraphs(rulesEl, introRules, 22, () => {
+          flow.controller = null;
+          flow.stage = "done";
+          tauntEl.textContent = "Let us see what you remember, Cozy Boy…";
+          tauntEl.classList.remove("hidden");
+          playCorrect();
+          startBtn.classList.remove("hidden");
+        });
+      }
+
+      const onKeyDown = (e) => {
+        if (e.code !== "Space") return;
+        const active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+        if (flow.stage === "done") return;
+        e.preventDefault();
+
+        if (flow.controller && flow.controller.typing) {
+          flow.controller.skip();
+          return;
+        }
+
+        if (flow.stage === "title") startStory();
+        else if (flow.stage === "story_done") startRules();
+      };
+
+      startBtn.onclick = () => {
         state.screen = state.unlocked ? "level" : "password";
         render();
       };
+
+      flow.onKeyDown = onKeyDown;
+      state.trialFlow = flow;
+      document.addEventListener("keydown", onKeyDown);
     }
 
     function renderPassword() {
@@ -785,7 +883,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       return controller;
     }
 
-    function renderStagedTrial({ title, storytellerParagraphs, questionText, buildOptions }) {
+    function renderStagedTrial({ title, storytellerParagraphs, questionText, buildOptions, noDivider = false }) {
       clearTrialFlow();
       screenEl.innerHTML = `
         <h2>${title}</h2>
@@ -797,6 +895,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
 
       const promptEl = document.getElementById("trialPrompt");
       const storyEl = document.getElementById("trialStory");
+      if (noDivider) storyEl.classList.add("no-divider");
       const questionEl = document.getElementById("trialQuestion");
       const optionsEl = document.getElementById("trialOptions");
       const flow = { stage: "header", controller: null, onKeyDown: null };
@@ -855,9 +954,10 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
 
     function renderSingle(level) {
       renderStagedTrial({
-        title: `Trial ${level.id}: ${level.title || "The Storyteller Speaks"}` ,
+        title: `Trial ${level.id}: ${level.title || "The Storyteller Speaks"}`,
         storytellerParagraphs: level.storyteller || [`The Storyteller narrows ancient eyes at ${state.currentHero}, while ${state.currentWife} awaits rescue.`],
         questionText: level.prompt,
+        noDivider: level.id === 4,
         buildOptions: (host) => {
           const options = level.options.map((opt, i) => `
             <button class="option" data-answer="${opt.replace(/"/g, '&quot;')}">${String.fromCharCode(65 + i)}) ${opt}</button>
@@ -879,7 +979,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
 
     function renderMulti(level) {
       renderStagedTrial({
-        title: `Trial ${level.id}: ${level.title || "Double Truth"}` ,
+        title: `Trial ${level.id}: ${level.title || "Double Truth"}`,
         storytellerParagraphs: level.storyteller || [`${state.currentHero} must deliver precision before the Witch writes another smug note.`],
         questionText: level.prompt,
         buildOptions: (host) => {
@@ -906,7 +1006,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
 
     function renderInput(level) {
       renderStagedTrial({
-        title: `Trial ${level.id}: ${level.title || "Geometry of Destiny"}` ,
+        title: `Trial ${level.id}: ${level.title || "Geometry of Destiny"}`,
         storytellerParagraphs: level.storyteller || ["The Storyteller studies the parchment and waits for precision."],
         questionText: level.prompt,
         buildOptions: (host) => {
