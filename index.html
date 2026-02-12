@@ -392,6 +392,7 @@
       <h3>Incorrect Answer</h3>
       <p id="errorMessage"></p>
       <p id="errorCount"></p>
+      <button id="errorAckBtn">ACKNOWLEDGE MY MISTAKE</button>
     </div>
   </div>
 
@@ -418,6 +419,7 @@
       </svg>
       <p>You found a Love Mushroom!</p>
       <p id="rewardCount"></p>
+      <button id="rewardClaimBtn">CLAIM A LOVE MUSHROOM</button>
     </div>
   </div>
 
@@ -565,9 +567,11 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
     const achievementBtn = document.getElementById("achievementBtn");
     const rewardOverlay = document.getElementById("rewardOverlay");
     const rewardCountEl = document.getElementById("rewardCount");
+    const rewardClaimBtn = document.getElementById("rewardClaimBtn");
     const errorOverlay = document.getElementById("errorOverlay");
     const errorMessageEl = document.getElementById("errorMessage");
     const errorCountEl = document.getElementById("errorCount");
+    const errorAckBtn = document.getElementById("errorAckBtn");
 
     function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -621,13 +625,19 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       [523, 659, 784, 1046, 1318, 1568].forEach((f, i) => tone(f, 0.14, "square", 0.05, i * 0.08));
     }
 
-    function showErrorModal(messageOptional, count, ms = 3000) {
+    function showErrorModal(messageOptional, count) {
       if (!errorOverlay) return;
       errorMessageEl.textContent = messageOptional || pick(errorBubbleMessages);
       errorCountEl.textContent = `WITCH SATISFACTION INDEX: ${count}`;
       errorOverlay.classList.remove("hidden");
-      clearTimeout(showErrorModal._hide);
-      showErrorModal._hide = setTimeout(() => errorOverlay.classList.add("hidden"), ms);
+      if (!errorAckBtn) return;
+      errorAckBtn.disabled = false;
+      errorAckBtn.focus();
+      errorAckBtn.onclick = () => {
+        if (errorAckBtn.disabled) return;
+        errorAckBtn.disabled = true;
+        errorOverlay.classList.add("hidden");
+      };
     }
 
     function registerMistake() {
@@ -644,11 +654,18 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       rewardOverlay.classList.remove("hidden");
       playCorrect();
       playAchievement();
-      clearTimeout(showMushroomReward._hide);
-      showMushroomReward._hide = setTimeout(() => {
+      if (!rewardClaimBtn) {
+        if (typeof onClaimCallback === "function") onClaimCallback();
+        return;
+      }
+      rewardClaimBtn.disabled = false;
+      rewardClaimBtn.focus();
+      rewardClaimBtn.onclick = () => {
+        if (rewardClaimBtn.disabled) return;
+        rewardClaimBtn.disabled = true;
         rewardOverlay.classList.add("hidden");
         if (typeof onClaimCallback === "function") onClaimCallback();
-      }, 3000);
+      };
     }
 
     function showAchievement(level) {
