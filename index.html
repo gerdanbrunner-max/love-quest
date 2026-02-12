@@ -514,7 +514,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
         prompt: "When did the Hero finally make the official offering of relationship to the Princess Wife?",
         type: "single",
         options: ["After the Princess returned home from the California trip in 2024", "Way too late, the Prince loves to take his sweet time", "October 9", "October 6"],
-        correct: "Way too late, the Prince loves to take his sweet time",
+        correct: "October 6",
         achievementTitle: "OFFICIAL OFFERING ACKNOWLEDGED",
         achievementText: "Destiny waited patiently. The Witch did not."
       },
@@ -554,7 +554,8 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       tauntTimer: null,
       letterOpen: false,
       audioCtx: null,
-      trialFlow: null
+      trialFlow: null,
+      questSubmissionLocked: false
     };
 
     const screenEl = document.getElementById("screen");
@@ -681,7 +682,16 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       }, delay);
     }
 
+    function lockQuestInteractions() {
+      state.questSubmissionLocked = true;
+      screenEl.querySelectorAll("button.option, input, button#submitMulti, button#dateBtn").forEach(el => {
+        el.disabled = true;
+      });
+    }
+
     function answerCorrect(level) {
+      if (state.questSubmissionLocked) return;
+      lockQuestInteractions();
       showMushroomReward(() => {
         showAchievement(level);
       });
@@ -958,6 +968,7 @@ The challenge has been issued.`;
           host.innerHTML = `<div class="options">${options}</div>`;
           host.querySelectorAll(".option").forEach(btn => {
             btn.onclick = () => {
+              if (state.questSubmissionLocked) return;
               const answer = btn.dataset.answer;
               if (answer === level.correct) {
                 answerCorrect(level);
@@ -984,6 +995,7 @@ The challenge has been issued.`;
             <button id="submitMulti">Seal the Offerings</button>
           `;
           host.querySelector("#submitMulti").onclick = () => {
+            if (state.questSubmissionLocked) return;
             const selected = [...host.querySelectorAll('input[type="checkbox"]:checked')].map(c => c.value);
             const sortedA = [...selected].sort().join("|");
             const sortedB = [...level.correctSet].sort().join("|");
@@ -1011,6 +1023,7 @@ The challenge has been issued.`;
           `;
           const dateInput = host.querySelector("#dateInput");
           function submitDate() {
+            if (state.questSubmissionLocked) return;
             const value = dateInput.value.trim().toLowerCase();
             if (level.accepted.includes(value)) {
               answerCorrect(level);
@@ -1028,37 +1041,99 @@ The challenge has been issued.`;
       });
     }
 
-    function rankForMistakes(m) {
-      if (m <= 2) return "LOVE LEGEND";
-      if (m <= 5) return "CERTIFIED HABAN";
-      if (m <= 9) return "CHAOTIC BUT ADORABLE";
-      return "WITCH’S FAVORITE (STILL LOVED)";
-    }
-
-    function renderFinal() {
-      screenEl.innerHTML = `
-        <h1>YOU WIN ❤️</h1>
-        <p>The Storyteller declares that Princess Wife has been rescued from the Witch of Long Distance. Cozy blankets shall be restored to the realm.</p>
-        <p><strong>Love Mushrooms:</strong> ${state.mushrooms}/7</p>
-        <p><strong>Mistakes:</strong> ${state.mistakes}</p>
-        <p><strong>Rank:</strong> ${rankForMistakes(state.mistakes)}</p>
-        <button id="claimBtn">CLAIM THE PRINCESS</button>
-        <div id="letter" class="letter ${state.letterOpen ? "" : "hidden"}">
-          <p>The Storyteller reveals a final parchment:</p>
-          <p>In San Francisco, the Hero guards the cozy kingdom and rehearses victory dances with only moderate dignity.</p>
-          <p>In Vilnius, the Princess Wife reigns across time zones, proving once again that distance is no match for stubborn romance and chaotic humor.</p>
-          <p>When February 27 arrives, reunion bells shall ring, snacks shall be over-ordered, and the Witch shall be forced to watch from very far away.</p>
-          <p>Love remains undefeated.</p>
-          ${state.mistakes > 0 ? `<p>Even when the Hero is, occasionally, dramatically confused (${state.mistakes} times).</p>` : ""}
-        </div>
-      `;
-      document.getElementById("claimBtn").onclick = () => {
-        state.letterOpen = true;
-        document.getElementById("letter").classList.remove("hidden");
+    function finalRankDetails(m) {
+      if (m === 0) {
+        return {
+          title: "SUPREME HABAN OF THE COZY KINGDOM",
+          explanation: "Flawless memory. Maximum devotion. Blankets chosen correctly. The Witch is emotionally unemployed. Cracking levels: elite."
+        };
+      }
+      if (m <= 2) {
+        return {
+          title: "HIGH COMMANDER OF COZY OPERATIONS",
+          explanation: "Minor dramatic confusion detected, but overall performance strong. Instagram sorcery intact. JB energy stable. The Princess remains deeply impressed."
+        };
+      }
+      if (m <= 4) {
+        return {
+          title: "CERTIFIED JUICY BOOTY HERO",
+          explanation: "Respectable effort. Occasional memory turbulence. Still capable of leading the kingdom through tacos, enchiladas, and moderately coordinated victory dances."
+        };
+      }
+      if (m <= 6) {
+        return {
+          title: "APPRENTICE COZY BOY",
+          explanation: "Some answers required… reflection. The Witch experienced brief joy. However, love remains undefeated and blankets are still available upon request."
+        };
+      }
+      return {
+        title: "DRAMATICALLY CONFUSED BUT DEEPLY LOVED HABAN",
+        explanation: "Facts were questionable. Confidence was bold. The Princess Wife rolls her eyes — affectionately. Love prevails anyway."
       };
     }
 
+    function renderFinal() {
+      clearTrialFlow();
+      const finalStory = `The Storyteller turns the final page, its edges glowing faintly in triumphant pink. The Witch of Long Distance shrieks into the void, for her petty schemes have failed. The Love Mushrooms have been gathered. The memories have been proven. The devotion has been witnessed.
+
+Across cities and time zones, through rescheduled flights and dramatic sighs, through cozy blankets and stubborn longing, the King Juicy Booty has answered the call.
+
+The Princess Wife is restored to the realm. Peace returns. Snacks may once again be over-ordered without interference. Love remains undefeated.
+
+And now the Princess Wife speaks not as legend, but as herself: she loves her Haban very much. She wishes him a happy Valentine’s Day. And she thanks him for saving her.`;
+      const rank = finalRankDetails(state.mistakes);
+
+      screenEl.innerHTML = `
+        <h1>THE KING JUICY BOOTY SAVES THE PRINCESS WIFE</h1>
+        <div id="finalStory" class="story-paper no-divider hidden"></div>
+        <div id="finalPrompt" class="space-prompt hidden">PRESS SPACE TO CONTINUE</div>
+        <div id="finalStats" class="story-paper no-divider hidden">
+          <p><strong>Love 🍄 Collected:</strong> ${state.mushrooms} / 7</p>
+          <p><strong>Witch Satisfaction Index:</strong> ${state.mistakes}</p>
+          <p><strong>Rank:</strong> ${rank.title}</p>
+          <p>${rank.explanation}</p>
+        </div>
+      `;
+
+      const storyEl = document.getElementById("finalStory");
+      const promptEl = document.getElementById("finalPrompt");
+      const statsEl = document.getElementById("finalStats");
+      const flow = { stage: "story_typing", controller: null, onKeyDown: null };
+
+      storyEl.classList.remove("hidden");
+      storyEl.innerHTML = "";
+      flow.controller = typewriterParagraphs(storyEl, finalStory, 22, () => {
+        flow.controller = null;
+        flow.stage = "story_done";
+        promptEl.classList.remove("hidden");
+      });
+
+      const onKeyDown = (e) => {
+        if (e.code !== "Space") return;
+        const active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+        if (flow.stage === "stats") return;
+        e.preventDefault();
+
+        if (flow.controller && flow.controller.typing) {
+          flow.controller.skip();
+          return;
+        }
+
+        if (flow.stage === "story_done") {
+          flow.stage = "stats";
+          promptEl.classList.add("hidden");
+          statsEl.classList.remove("hidden");
+        }
+      };
+
+      flow.onKeyDown = onKeyDown;
+      state.trialFlow = flow;
+      document.addEventListener("keydown", onKeyDown);
+    }
+
     function renderLevel() {
+      state.questSubmissionLocked = false;
       rotateNames();
       const level = levels[state.levelIndex];
       if (!level) {
