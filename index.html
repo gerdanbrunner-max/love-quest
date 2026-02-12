@@ -417,7 +417,7 @@
         <rect x="9" y="11" width="1" height="1" fill="#000" />
       </svg>
       <p>You found a Love Mushroom!</p>
-      <button id="rewardClaimBtn">Claim</button>
+      <p id="rewardCount"></p>
     </div>
   </div>
 
@@ -563,7 +563,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
     const achievementTextEl = document.getElementById("achievementText");
     const achievementBtn = document.getElementById("achievementBtn");
     const rewardOverlay = document.getElementById("rewardOverlay");
-    const rewardClaimBtn = document.getElementById("rewardClaimBtn");
+    const rewardCountEl = document.getElementById("rewardCount");
     const errorOverlay = document.getElementById("errorOverlay");
     const errorMessageEl = document.getElementById("errorMessage");
     const errorCountEl = document.getElementById("errorCount");
@@ -637,15 +637,17 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
     }
 
     function showMushroomReward(onClaimCallback) {
+      state.mushrooms += 1;
+      updateHUD();
+      rewardCountEl.textContent = `LOVE 🍄 COLLECTED: ${state.mushrooms}`;
       rewardOverlay.classList.remove("hidden");
-      rewardClaimBtn.onclick = () => {
+      playCorrect();
+      playAchievement();
+      clearTimeout(showMushroomReward._hide);
+      showMushroomReward._hide = setTimeout(() => {
         rewardOverlay.classList.add("hidden");
-        state.mushrooms += 1;
-        updateHUD();
-        playCorrect();
-        playAchievement();
         if (typeof onClaimCallback === "function") onClaimCallback();
-      };
+      }, 3000);
     }
 
     function showAchievement(level) {
@@ -706,19 +708,47 @@ The challenge has been issued.`;
       screenEl.innerHTML = `
         <h1 class="intro-title-cinematic">PROLOGUE: THE WITCH RETURNS</h1>
         <div id="introStory" class="story-paper no-divider hidden"></div>
-        <button id="introAcceptBtn">ACCEPT THE CHALLENGE AND SAVE PRINCESS WIFE</button>
+        <div id="introPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
+        <button id="introAcceptBtn" class="hidden">ACCEPT THE CHALLENGE AND SAVE PRINCESS WIFE</button>
       `;
 
       const storyEl = document.getElementById("introStory");
+      const introPrompt = document.getElementById("introPrompt");
       const introAcceptBtn = document.getElementById("introAcceptBtn");
-      const flow = { stage: "story_typing", controller: null, onKeyDown: null };
+      const flow = { stage: "title", controller: null, onKeyDown: null };
 
-      storyEl.classList.remove("hidden");
-      storyEl.innerHTML = "";
-      flow.controller = typewriterParagraphs(storyEl, introStory, 22, () => {
-        flow.controller = null;
-        flow.stage = "story_done";
-      });
+      function setPrompt(show) {
+        introPrompt.classList.toggle("hidden", !show);
+      }
+
+      function startStoryTyping() {
+        flow.stage = "story_typing";
+        setPrompt(false);
+        storyEl.classList.remove("hidden");
+        storyEl.innerHTML = "";
+        flow.controller = typewriterParagraphs(storyEl, introStory, 22, () => {
+          flow.controller = null;
+          flow.stage = "story_done";
+          setPrompt(false);
+          introAcceptBtn.classList.remove("hidden");
+        });
+      }
+
+      const onKeyDown = (e) => {
+        if (e.code !== "Space") return;
+        const active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+        e.preventDefault();
+
+        if (flow.controller && flow.controller.typing) {
+          flow.controller.skip();
+          return;
+        }
+
+        if (flow.stage === "title") {
+          startStoryTyping();
+        }
+      };
 
       introAcceptBtn.onclick = () => {
         if (flow.controller && flow.controller.typing) flow.controller.skip();
@@ -726,7 +756,9 @@ The challenge has been issued.`;
         render();
       };
 
+      flow.onKeyDown = onKeyDown;
       state.trialFlow = flow;
+      document.addEventListener("keydown", onKeyDown);
     }
 
     function renderPassword() {
