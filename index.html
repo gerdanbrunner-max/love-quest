@@ -51,16 +51,20 @@
       color: var(--cream);
       padding: 10px 16px;
       border-bottom: 4px solid var(--pink);
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
       letter-spacing: 1px;
       text-transform: uppercase;
       font-weight: 700;
       box-shadow: 0 4px 0 #fff;
+      gap: 10px;
     }
 
-    .hud span { font-size: clamp(12px, 2vw, 16px); }
+    .hud span { font-size: clamp(11px, 1.55vw, 15px); white-space: nowrap; }
+    #hudLevel { justify-self: start; }
+    #hudMushrooms { justify-self: center; text-align: center; }
+    #hudMistakes { justify-self: end; text-align: right; white-space: normal; max-width: min(48vw, 540px); }
 
     .game-wrap {
       position: relative;
@@ -329,19 +333,6 @@
     @keyframes introTitleIn {
       from { opacity: 0; transform: scale(0.96); }
       to { opacity: 1; transform: scale(1); }
-    }
-
-    .witch-taunt {
-      margin: 8px 0 12px;
-      color: #ffb9de;
-      font-weight: 700;
-      opacity: 0;
-      transform: translateY(4px);
-      animation: tauntIn 260ms ease forwards;
-    }
-
-    @keyframes tauntIn {
-      to { opacity: 1; transform: translateY(0); }
     }
 
     .typed-question {
@@ -675,40 +666,30 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
 
     function renderIntro() {
       clearTrialFlow();
-      const introStory = `The Storyteller begins where all good legends do: with two people who should never have found each other — and did anyway.
+      const introStory = `The Storyteller speaks of two people who absolutely refused to let geography win. They survived time zones, airport goodbyes, delayed flights, and the emotional sport of long distance.
 
-Against the odds, the Hero and the Princess Wife endured distance, time zones, and the slow ache of missing each other. They returned again and again, choosing the same person in different cities, different seasons, different versions of themselves.
+Against all logistical reason, they built a life from ordinary magic: dishes that never end, laundry that multiplies, cooking side by side, quiet reading, long walks, and so much cracking. The kind of love that thrives not in fireworks — but in the mundane.
 
-Eventually, they built something quieter and stronger than drama: a shared life. A cozy home. Ordinary magic. Dishes and laundry. Cooking side by side. Reading. Walks. Cracking — so much cracking. The kind of love that does not need fireworks to be real.
+This level of happiness did not go unnoticed.
 
-But the Witch of Long Distance despises a happy ending. She feeds on delayed flights and rescheduled plans. She cannot tolerate the peace of two people who would rather do the mundane together than anything apart.
+The Witch of Long Distance, patron saint of rescheduled plans and inconvenient timing, watched with growing irritation. Peace offended her. Stability insulted her. Cozy domestic bliss was, frankly, unacceptable.
 
-So the Witch struck again.
+So with dramatic flair and suspiciously precise timing, she struck again.
 
-With a swirl of petty power and impeccable timing, she snatched the Princess Wife once more — and dared the Hero to prove he truly knows her.`;
-      const introRules = `RULES OF THE QUEST:
-To rescue the Princess Wife, the Hero (also known as Mr. Haban, Cozy Boy, Juicy Booty, Husband, and Captain America) must collect 7 Love Mushrooms.
+The Princess Wife was snatched.
 
-Love Mushrooms are earned by completing Trials about the couple’s legend.
-Wrong answers increase Witch Satisfaction (mistakes), which the Witch tracks with great enthusiasm.
+And the Witch declared that only true love — proven through memory, devotion, and the gathering of all seven Love Mushrooms — would be powerful enough to bring her back.
 
-Press SPACE to continue through the story. Answer carefully. The Witch is dramatic, petty, and counting.`;
+The challenge has been issued.`;
 
       screenEl.innerHTML = `
         <h1 class="intro-title-cinematic">PROLOGUE: THE WITCH RETURNS</h1>
-        <div id="introStory" class="story-paper hidden"></div>
-        <div id="introRules" class="story-paper hidden"></div>
-        <p id="introTaunt" class="witch-taunt hidden"></p>
+        <div id="introStory" class="story-paper no-divider hidden"></div>
         <div id="introPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
-        <button id="startBtn" class="hidden">YES, SAVE WIFE</button>
       `;
-      playCorrect();
 
       const storyEl = document.getElementById("introStory");
-      const rulesEl = document.getElementById("introRules");
-      const tauntEl = document.getElementById("introTaunt");
       const promptEl = document.getElementById("introPrompt");
-      const startBtn = document.getElementById("startBtn");
       const flow = { stage: "title", controller: null, onKeyDown: null };
 
       function setPrompt(show) {
@@ -727,26 +708,10 @@ Press SPACE to continue through the story. Answer carefully. The Witch is dramat
         });
       }
 
-      function startRules() {
-        flow.stage = "rules_typing";
-        setPrompt(false);
-        rulesEl.classList.remove("hidden");
-        rulesEl.innerHTML = "";
-        flow.controller = typewriterParagraphs(rulesEl, introRules, 22, () => {
-          flow.controller = null;
-          flow.stage = "done";
-          tauntEl.textContent = "Let us see what you remember, Cozy Boy…";
-          tauntEl.classList.remove("hidden");
-          playCorrect();
-          startBtn.classList.remove("hidden");
-        });
-      }
-
       const onKeyDown = (e) => {
         if (e.code !== "Space") return;
         const active = document.activeElement;
         if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
-        if (flow.stage === "done") return;
         e.preventDefault();
 
         if (flow.controller && flow.controller.typing) {
@@ -754,13 +719,12 @@ Press SPACE to continue through the story. Answer carefully. The Witch is dramat
           return;
         }
 
-        if (flow.stage === "title") startStory();
-        else if (flow.stage === "story_done") startRules();
-      };
-
-      startBtn.onclick = () => {
-        state.screen = state.unlocked ? "level" : "password";
-        render();
+        if (flow.stage === "title") {
+          startStory();
+        } else if (flow.stage === "story_done") {
+          state.screen = state.unlocked ? "level" : "password";
+          render();
+        }
       };
 
       flow.onKeyDown = onKeyDown;
