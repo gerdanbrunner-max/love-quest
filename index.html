@@ -344,7 +344,7 @@
 </head>
 <body class="scanlines">
   <div class="hud">
-    <span id="hudLevel">LEVEL 0/6</span>
+    <span id="hudLevel">LEVEL 0/7</span>
     <span id="hudMushrooms">🍄 x0</span>
     <span id="hudMistakes">WITCH x0</span>
   </div>
@@ -421,63 +421,83 @@
     const levels = [
       {
         id: 1,
-        prompt: "In the First Chapter, the Princess revealed a peculiar obsession during the corporate feast. What was it?",
+        title: "The Corporate Fluorescent Chandeliers",
+        storyteller: "The Storyteller opens the First Chapter beneath corporate fluorescent chandeliers and respectable levels of excitement. Peace signs flashed each time the Princess Wife prepared to exit the room, unaware that destiny had quietly RSVP’d. It was an unlikely birthplace for legend. Badge scanners beeped. Polite laughter echoed. Ambition hummed in sterile light. The Witch herself scoffed — nothing romantic survives quarterly objectives. After all, Mr. Haban had once ignored the Queen of Mushrooms on Slack… and, with astonishing confidence, declared that she must surely be much older. And yet, beneath those unforgiving lights, something shifted. The Witch did not approve. Fate did not ask.",
+        prompt: "In this most improbable beginning, what peculiar obsession did the Princess Wife confess during the corporate feast?",
         type: "single",
-        options: ["Medieval swords", "Baby cows", "Office spreadsheets", "Corporate synergy"],
+        options: ["Frogs in business attire", "Baby cows", "Pictures of pooping dogs", "Corporate growth acceleration"],
         correct: "Baby cows",
         achievementTitle: "BOVINE PROPHECY RECALLED",
         achievementText: "The Hero remembers the sacred obsession. The Witch frowns."
       },
       {
         id: 2,
-        prompt: "In the grand city of Berlin, the Hero presented sacred offerings to strengthen the legend. Which TWO offerings were they? Two truths are required.",
+        title: "The Trial of Berlin",
+        storyteller: "The Storyteller turns the NEXT page, sealed with the crest of Berlin. For the first time, Cozy Boy and the Keeper of Cozy stepped beyond corporate halls and crossed great distance to test whether their Instagram sorcery could survive reality. Would digital charm dissolve into silence? Would Husband and Wifey discover awkward stillness instead of magic? The Witch leaned forward eagerly, convinced the encounter would collapse under its own hype. But Berlin does not bend to doubt.",
+        prompt: "In the grand city of Berlin, the vibe trial was sealed by sacred offerings from Juicy Booty to the Princess Wife. Select all that apply.",
         type: "multi",
-        options: ["A plush cow", "A golden crown", "Four Nothing But Thieves concert tickets", "A medieval sword"],
-        correctSet: ["A plush cow", "Four Nothing But Thieves concert tickets"],
+        options: ["Sharing fries in a kebab shop", "German beer", "Four Nothing But Thieves concert tickets", "A plush cow"],
+        correctSet: ["Four Nothing But Thieves concert tickets", "A plush cow"],
         achievementTitle: "OFFERINGS OF BERLIN CONFIRMED",
         achievementText: "Two truths were spoken. The plush prophecy strengthens."
       },
       {
         id: 3,
-        prompt: "During the long-distance era, what sustained the couple’s love across oceans and time zones?",
+        title: "The Invisible String",
+        storyteller: "Berlin passed. And with it, the illusion of coincidence. After that chapter, it became increasingly difficult for Captain America and the Queen of Mushrooms to pretend this was temporary. They attempted resistance. Dramatically. Occasionally convincingly. Yet an invisible string tugged between them. It stretched across New York, Croatia, Vilnius, Milan, San Francisco, and Los Angeles. Airports witnessed reunions. Screens glowed deep into the night. The Witch attempted to knot the thread. Fate tightened it instead.",
+        prompt: "During the era of distance and devotion, what sustained the bond between Cozy Boy and his Princess Wife across oceans and time zones?",
         type: "single",
-        options: ["Frequent flyer miles", "Never stopping Instagram messages", "Dramatic longing", "All of the above"],
+        options: ["Frogging", "All of the above", "Never stopping Instagram messages", "Frequent flyer miles"],
         correct: "All of the above",
         achievementTitle: "DISTANCE SPELL RESISTED",
         achievementText: "Miles were defeated. Thumbs proved legendary."
       },
       {
         id: 4,
-        prompt: "On what date did the couple hear destiny describe geometry?",
-        type: "input",
-        accepted: ["august 24", "august 24th", "08/24", "8/24"],
-        cutscene: [
-          "The chapel glowed with neon.",
-          "The officiant proclaimed the ring a circle without beginning or end, as love stretches beyond time itself.",
-          "The Hero and the Princess tried not to laugh. They failed."
-        ],
-        achievementTitle: "THE CIRCLE SERMON SURVIVED",
-        achievementText: "Destiny described geometry. Love persisted."
-      },
-      {
-        id: 5,
-        prompt: "In the summer of 2024, the Hero escorted the Princess to Nida. The Princess awoke very cold and confused and spoke a short prophecy. What were the words?",
+        title: "The Dunes of Nida",
+        storyteller: "The Storyteller travels north to the windswept dunes of Nida, beloved refuge of the Princess Wife. There, beneath open sky and Baltic wind, the Queen of Mushrooms fell asleep in serene triumph. When she awoke, she was cold, confused, and momentarily betrayed by the elements. The Witch smirked in the distance, pleased with the chill she had conjured. Only the true Hero would remember the exact words spoken in that sleepy prophecy.",
+        prompt: "In the summer of 2024, in Nida, the Princess Wife awoke cold and confused and spoke a short phrase. What were her exact words?",
         type: "single",
-        options: ["man karšta", "man nuobodu", "man linksma", "man šalta"],
+        options: ["man linksma", "man karšta", "man šalta", "man nuobodu"],
         correct: "man šalta",
         achievementTitle: "THE NIDA CHILL DECIPHERED",
         achievementText: "The dunes remember. The cold prophecy honored."
       },
       {
-        id: 6,
-        prompt: "Shrimp tacos from Sunset Cantina. Enchiladas from Celia’s by the Beach. Cold beer opened. The Pitt glowing on the screen. What phrase erupts when destiny aligns?",
+        id: 5,
+        title: "The Official Beginning",
+        storyteller: "The Storyteller unveils a chapter heavy with inevitability. Miles multiplied. Screen time reports grew suspicious. Instagram messages conquered waking hours. Frogging escalated beyond reasonable limits. With each visit, affection deepened. Still, Mr. Haban hesitated. The Princess Wife did not fail to notice. The Witch tapped her foot impatiently, muttering about “sweet time.” Eventually, neither Hero nor Keeper of Cozy could deny what destiny had already declared.",
+        prompt: "When did the Hero finally make the official offering of relationship to the Princess Wife?",
         type: "single",
-        options: ["Give me that sweet sweet loving", "Lovely jubbly hubby", "I already watched S02E06", "Hell fucking yeah"],
+        options: ["After the Princess returned home from the California trip in 2024", "Way too late, the Prince loves to take his sweet time", "October 9", "October 6"],
+        correct: "Way too late, the Prince loves to take his sweet time",
+        achievementTitle: "OFFICIAL OFFERING ACKNOWLEDGED",
+        achievementText: "Destiny waited patiently. The Witch did not."
+      },
+      {
+        id: 6,
+        title: "Circle With No Beginning or End",
+        storyteller: "The Storyteller arrives at the neon-lit Ever After Chapel, where vows echoed beneath glowing lights and giggles threatened sacred composure. The officiant spoke of rings as perfect circles — without beginning, without end — symbols of eternity and unbroken devotion. Cozy Boy and Wifey tried very hard not to laugh. They did not succeed. The Witch rolled her eyes dramatically at the geometry. Champagne followed. Then more champagne. The newlyweds ventured into the casino, where multiple highly involved rounds of craps unfolded with dramatic enthusiasm. Fortune tilted wildly. Laughter grew louder. And when the night finally softened, Husband and Princess Wife returned to their hotel suite… where Taco Bell sealed the celebration. The Witch, scandalized by both eternity and tacos, withdrew into shadow.",
+        prompt: "On what date did Captain America and the Queen of Mushrooms stand in the Ever After Chapel and hear love described as a perfect circle?",
+        type: "input",
+        accepted: ["august 24", "august 24th", "aug 24", "8/24", "08/24", "august 24 2025", "august 24, 2025", "8/24/2025", "08/24/2025"],
+        options: ["August 24 2025", "8/24", "Aug 24", "08/24/2025"],
+        achievementTitle: "THE CIRCLE SERMON SURVIVED",
+        achievementText: "Destiny described geometry. Love persisted."
+      },
+      {
+        id: 7,
+        title: "The Cosy Feast of Destiny",
+        storyteller: "The Storyteller closes the final chapter not with thunder, but with warmth. The Hero and the Princess Wife have found their happily ever after. Not the kind carved in marble, but the kind built quietly — dish by dish, load by load, evening by evening. They are building their cozy home together. They are happy in the mundane. In never-ending dishes and laundry. In making food side by side. In reading quietly. In long walks. In cracking — so much cracking. They know each other’s favorite foods without asking. They speak each other’s language without translating. They finish each other’s thoughts, sentences, and occasionally snacks. Slowly, steadily, they are turning into each other… merging into one unstoppable cozy blop. The Witch watches from afar, baffled and mildly offended that joy can be found in such ordinary magic. And still — for all its simplicity — there is a ritual that seals it every time.",
+        prompt: "The perfect night-in presents itself to the couple. Shrimp tacos from Sunset Cantina. Enchiladas from Celia’s by the Beach. Cold beer opened. The Pitt glowing on the screen. When destiny aligns in this sacred domestic ritual, what phrase erupts from the Hero?",
+        type: "single",
+        options: ["Lovely jubbly hubby", "Hell fucking yeah", "Give me that sweet sweet loving", "I already watched S02E06"],
         correct: "Hell fucking yeah",
         achievementTitle: "COSY FEAST OF DESTINY",
         achievementText: "The sacred phrase rang out across the kingdom."
       }
     ];
+
 
     // ===== State =====
     const state = {
@@ -511,8 +531,8 @@
     }
 
     function updateHUD() {
-      const levelLabel = state.screen === "level" ? state.levelIndex + 1 : Math.min(state.levelIndex, 6);
-      document.getElementById("hudLevel").textContent = `LEVEL ${levelLabel}/6`;
+      const levelLabel = state.screen === "level" ? state.levelIndex + 1 : Math.min(state.levelIndex, 7);
+      document.getElementById("hudLevel").textContent = `LEVEL ${levelLabel}/7`;
       document.getElementById("hudMushrooms").textContent = `🍄 x${state.mushrooms}`;
       document.getElementById("hudMistakes").textContent = `WITCH x${state.mistakes}`;
     }
@@ -633,7 +653,7 @@
         <p>${wifeNames.join(", ")}, Scolder of Non-Cozy Boys — was snatched away.</p>
         <div class="rules">
           <strong>Rules of the Quest:</strong>
-          <p>To rescue Princess Wife, the Hero must collect 6 Love Mushrooms by answering Trials about the couple’s legend.</p>
+          <p>To rescue Princess Wife, the Hero must collect 7 Love Mushrooms by answering Trials about the couple’s legend.</p>
           <p>Wrong answers increase Witch Satisfaction.</p>
           <p>The Witch cannot be bribed.</p>
         </div>
@@ -764,8 +784,8 @@
       clearTrialFlow();
       screenEl.innerHTML = `
         <h2>${title}</h2>
-        <div id="trialPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
         <div id="trialStory" class="story-paper hidden"></div>
+        <div id="trialPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
         <p id="trialQuestion" class="typed-question hidden"></p>
         <div id="trialOptions" class="hidden"></div>
       `;
@@ -830,8 +850,8 @@
 
     function renderSingle(level) {
       renderStagedTrial({
-        title: `Trial ${level.id}: The Storyteller Speaks`,
-        storytellerParagraphs: [`The Storyteller narrows ancient eyes at ${state.currentHero}, while ${state.currentWife} awaits rescue.`],
+        title: `Trial ${level.id}: ${level.title || "The Storyteller Speaks"}` ,
+        storytellerParagraphs: [level.storyteller || `The Storyteller narrows ancient eyes at ${state.currentHero}, while ${state.currentWife} awaits rescue.`],
         questionText: level.prompt,
         buildOptions: (host) => {
           const options = level.options.map((opt, i) => `
@@ -854,8 +874,8 @@
 
     function renderMulti(level) {
       renderStagedTrial({
-        title: `Trial ${level.id}: Double Truth`,
-        storytellerParagraphs: [`${state.currentHero} must deliver precision before the Witch writes another smug note.`],
+        title: `Trial ${level.id}: ${level.title || "Double Truth"}` ,
+        storytellerParagraphs: [level.storyteller || `${state.currentHero} must deliver precision before the Witch writes another smug note.`],
         questionText: level.prompt,
         buildOptions: (host) => {
           const rows = level.options.map((opt, i) => `
@@ -881,11 +901,13 @@
 
     function renderInput(level) {
       renderStagedTrial({
-        title: `Trial ${level.id}: Geometry of Destiny`,
-        storytellerParagraphs: level.cutscene,
+        title: `Trial ${level.id}: ${level.title || "Geometry of Destiny"}` ,
+        storytellerParagraphs: [level.storyteller || "The Storyteller studies the parchment and waits for precision."],
         questionText: level.prompt,
         buildOptions: (host) => {
+          const optionRows = (level.options || []).map((opt, i) => `<div class="option">${String.fromCharCode(65 + i)}) ${opt}</div>`).join("");
           host.innerHTML = `
+            ${optionRows ? `<div class="options">${optionRows}</div>` : ""}
             <input id="dateInput" type="text" placeholder="type date" autocomplete="off" />
             <div><button id="dateBtn">Offer Date</button></div>
           `;
