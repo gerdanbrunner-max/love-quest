@@ -271,6 +271,16 @@
       transform: translateY(0);
     }
 
+    .error-bubble {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 190;
+      margin: 0;
+      max-width: min(320px, calc(100vw - 28px));
+      pointer-events: none;
+    }
+
     .level-meta {
       margin: 0 0 8px;
       color: #ffb9de;
@@ -304,6 +314,7 @@
     <section id="screen" class="panel"></section>
   </main>
 
+  <div id="errorBubble" class="bubble error-bubble" aria-live="polite"></div>
 
   <div id="achievementOverlay" class="achievement-overlay hidden">
     <div class="achievement-card">
@@ -356,6 +367,15 @@
         "The scoreboard trembles."
       ]
     };
+
+    // Reusable rotating wrong-answer messages for the error bubble
+    const errorBubbleMessages = [
+      "You know better, husband",
+      "Wrong answer. Try again.",
+      "The witch is pleased. Unfortunately.",
+      "Nope. You are not a cozy boy",
+      "Incorrect. The princess remains snatched."
+    ];
 
     const levels = [
       {
@@ -439,7 +459,7 @@
     const achievementBtn = document.getElementById("achievementBtn");
     const rewardOverlay = document.getElementById("rewardOverlay");
     const rewardClaimBtn = document.getElementById("rewardClaimBtn");
-    const bubbleEl = document.getElementById("witchBubble");
+    const bubbleEl = document.getElementById("errorBubble");
 
     function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -493,19 +513,20 @@
       [523, 659, 784, 1046, 1318, 1568].forEach((f, i) => tone(f, 0.14, "square", 0.05, i * 0.08));
     }
 
-    function showBubble(text, ms = 3300) {
+    function showErrorBubble(messageOptional, ms = 3000) {
       if (!bubbleEl) return;
+      const text = messageOptional || pick(errorBubbleMessages);
       bubbleEl.textContent = text;
       bubbleEl.classList.add("show");
-      clearTimeout(showBubble._hide);
-      showBubble._hide = setTimeout(() => bubbleEl.classList.remove("show"), ms);
+      clearTimeout(showErrorBubble._hide);
+      showErrorBubble._hide = setTimeout(() => bubbleEl.classList.remove("show"), ms);
     }
 
     function registerMistake() {
       state.mistakes += 1;
       updateHUD();
       playWrong();
-      showBubble(pick(witchLines.wrong));
+      showErrorBubble();
     }
 
     function showMushroomReward(onClaimCallback) {
@@ -525,7 +546,6 @@
       achievementTextEl.textContent = level.achievementText;
       overlay.classList.remove("hidden");
       playAchievement();
-      if (Math.random() < 0.85) showBubble(pick(witchLines.achievement));
       updateHUD();
     }
 
@@ -547,7 +567,6 @@
       const delay = 18000 + Math.random() * 17000;
       state.tauntTimer = setTimeout(() => {
         if (state.screen === "level") {
-          showBubble(pick(witchLines.random));
           scheduleRandomTaunt();
         }
       }, delay);
@@ -600,7 +619,7 @@
 
       function submitPassword() {
         const value = input.value.trim().toLowerCase();
-        if (value === "center valley") {
+        if (value === "allentown") {
           localStorage.setItem("loveQuestUnlocked", "true");
           state.unlocked = true;
           status.textContent = "ACCESS GRANTED";
