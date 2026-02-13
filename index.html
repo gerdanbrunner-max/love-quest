@@ -476,9 +476,6 @@
     </div>
   </div>
 
-  <audio id="typeTickAudio" src="./assets/sfx/type-tick.mp3" preload="auto"></audio>
-  <audio id="jingleAudio" preload="auto"></audio>
-
   <script>
     // ===== Editable content data =====
     const heroNames = ["Mr. Haban", "Cozy Boy", "Juicy Booty", "Husband", "Captain America"];
@@ -658,71 +655,21 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
     const errorMessageEl = document.getElementById("errorMessage");
     const errorCountEl = document.getElementById("errorCount");
     const errorAckBtn = document.getElementById("errorAckBtn");
-    const typeTickAudio = document.getElementById("typeTickAudio");
-    const jingleAudio = document.getElementById("jingleAudio");
     const questDecoEl = document.getElementById("questDeco");
-    let tickBuffer = null;
-    let tickGain = null;
-    let tickMode = "webaudio";
-    let tickUrl = "";
-    let tickPool = [];
-    let tickPoolIdx = 0;
+    let activeJingleOscs = [];
 
     function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
     async function initAudioOnce() {
-      if (state.audioUnlocked && (tickBuffer || tickPool.length)) return;
+      if (state.audioUnlocked) return;
       if (state.audioInitPromise) return state.audioInitPromise;
       state.audioInitPromise = (async () => {
-        if (!state.audioCtx) {
-          state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (state.audioCtx.state !== "running") {
-          await state.audioCtx.resume();
-        }
-        if (!tickGain) {
-          tickGain = state.audioCtx.createGain();
-          tickGain.gain.value = 0.32;
-          tickGain.connect(state.audioCtx.destination);
-        }
-        if (!tickUrl && typeTickAudio) {
-          const raw = typeTickAudio.getAttribute("src") || typeTickAudio.src;
-          tickUrl = new URL(raw, window.location.href).toString();
-          console.log("[audio] tickUrl", tickUrl);
-        }
-        if (!tickPool.length && tickUrl) {
-          tickPool = Array.from({ length: 6 }, () => {
-            const a = new Audio(tickUrl);
-            a.preload = "auto";
-            a.volume = 0.35;
-            return a;
-          });
-        }
-        if (!tickBuffer && tickUrl) {
-          try {
-            const res = await fetch(tickUrl, { cache: "no-store" });
-            if (!res.ok) throw new Error(`HTTP ${res.status} while fetching tick audio`);
-            const contentType = (res.headers.get("content-type") || "").toLowerCase();
-            console.log("[audio] content-type", contentType);
-            const arr = await res.arrayBuffer();
-            const looksHtmlByType = (!contentType.includes("audio") && (contentType.includes("text/html") || contentType === ""));
-            if (looksHtmlByType) {
-              const head = new TextDecoder().decode(arr.slice(0, 256)).toLowerCase();
-              if (head.includes("<!doctype") || head.includes("<html")) {
-                throw new Error("Got HTML instead of audio; likely bad path/404.");
-              }
-            }
-            tickBuffer = await state.audioCtx.decodeAudioData(arr.slice(0));
-            tickMode = "webaudio";
-            console.log("[audio] unlocked, tick buffer ready:", tickUrl);
-          } catch (err) {
-            tickMode = "htmlAudioFallback";
-            console.warn("[audio] Using HTMLAudio fallback for tick");
-            console.error("[audio] failed to unlock/decode type tick", err);
-          }
-        }
+        const AudioCtor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtor) return;
+        if (!state.audioCtx) state.audioCtx = new AudioCtor();
+        if (state.audioCtx.state !== "running") await state.audioCtx.resume();
         state.audioUnlocked = true;
-      })().finally(() => {
+      })().catch(() => {}).finally(() => {
         state.audioInitPromise = null;
       });
       return state.audioInitPromise;
@@ -730,19 +677,10 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
 
     function setSfxEnabled(enabled) {
       state.sfxEnabled = !!enabled;
-      if (!state.sfxEnabled && jingleAudio) {
-        jingleAudio.pause();
-        jingleAudio.currentTime = 0;
+      if (!state.sfxEnabled) {
+        activeJingleOscs.forEach(osc => { try { osc.stop(); } catch (_) {} });
+        activeJingleOscs = [];
       }
-    }
-
-    function playTickFallback() {
-      if (!state.sfxEnabled || !state.audioUnlocked || !tickPool.length) return;
-      const a = tickPool[tickPoolIdx++ % tickPool.length];
-      try {
-        a.currentTime = 0;
-        a.play().catch(() => {});
-      } catch (_) {}
     }
 
     function playTypeTick(charCounter, ch) {
@@ -752,27 +690,34 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       if (charCounter % 3 !== 0) return;
       if (now - state.lastTypeTickAt < 60) return;
       state.lastTypeTickAt = now;
-      if (tickMode === "webaudio" && tickBuffer && tickGain && state.audioCtx && state.audioCtx.state === "running") {
-        const source = state.audioCtx.createBufferSource();
-        source.buffer = tickBuffer;
-        source.connect(tickGain);
-        source.start();
-        return;
-      }
-      playTickFallback();
+      tone(900 + Math.random() * 500, 0.02, "square", 0.025);
+    }
+
+    function stopJingle() {
+      activeJingleOscs.forEach(osc => { try { osc.stop(); } catch (_) {} });
+      activeJingleOscs = [];
     }
 
     function playJingle(kind) {
-      if (!jingleAudio) return;
-      jingleAudio.pause();
-      jingleAudio.currentTime = 0;
-      jingleAudio.loop = false;
-      jingleAudio.src = kind === "finale" ? "./assets/sfx/finale-jingle.mp3" : "./assets/sfx/quest-jingle.mp3";
-      jingleAudio.load();
-      if (state.sfxEnabled && state.audioUnlocked) {
-        jingleAudio.volume = kind === "finale" ? 0.62 : 0.5;
-        jingleAudio.play().catch(() => {});
-      }
+      if (!state.sfxEnabled || !state.audioUnlocked || !state.audioCtx || state.audioCtx.state !== "running") return;
+      stopJingle();
+      const notes = kind === "finale"
+        ? [523, 659, 784, 1046, 988, 1175, 1318]
+        : [392, 494, 587, 784];
+      const step = kind === "finale" ? 0.21 : 0.17;
+      notes.forEach((freq, i) => {
+        const osc = state.audioCtx.createOscillator();
+        const g = state.audioCtx.createGain();
+        osc.type = "square";
+        osc.frequency.value = freq;
+        g.gain.value = kind === "finale" ? 0.06 : 0.05;
+        osc.connect(g).connect(state.audioCtx.destination);
+        const start = state.audioCtx.currentTime + i * step;
+        osc.start(start);
+        g.gain.exponentialRampToValueAtTime(0.0001, start + 0.14);
+        osc.stop(start + 0.15);
+        activeJingleOscs.push(osc);
+      });
     }
 
     function applyThemeForScreen(themeKey) {
