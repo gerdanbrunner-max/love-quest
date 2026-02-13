@@ -609,7 +609,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       },
       {
         id: 7,
-        title: "The Cozy Feast of Destiny",
+        title: "The Cosy Feast of Destiny",
         storyteller: [
           "The Storyteller closes the final chapter not with thunder, but with warmth. The Hero and the Princess Wife have found their happily ever after. Not the kind carved in marble, but the kind built quietly — dish by dish, load by load, evening by evening.",
           "They are building their cozy home together. They are happy in the mundane. In never-ending dishes and laundry. In making food side by side. In reading quietly. In long walks. In cracking — so much cracking.",
@@ -620,7 +620,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
         type: "single",
         options: ["Lovely jubbly hubby", "Hell fucking yeah", "Give me that sweet sweet loving", "I already watched S02E06"],
         correct: "Hell fucking yeah",
-        achievementTitle: "COZY FEAST OF DESTINY",
+        achievementTitle: "COSY FEAST OF DESTINY",
         achievementText: "The sacred phrase rang out across the kingdom."
       }
     ];
@@ -642,6 +642,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       questSubmissionLocked: false,
       sfxEnabled: true,
       audioUnlocked: false,
+      audioInitPromise: null,
       lastTypeTickAt: 0
     };
 
@@ -660,24 +661,40 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
     const typeTickAudio = document.getElementById("typeTickAudio");
     const jingleAudio = document.getElementById("jingleAudio");
     const questDecoEl = document.getElementById("questDeco");
+    let tickBuffer = null;
+    let tickGain = null;
 
     function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-    function ensureAudioUnlocked() {
-      if (state.audioUnlocked) return;
-      state.audioUnlocked = true;
-      if (state.audioCtx && state.audioCtx.state === "suspended") {
-        state.audioCtx.resume().catch(() => {});
-      }
-      [typeTickAudio, jingleAudio].forEach((audio) => {
-        if (!audio) return;
-        try {
-          const p = audio.play();
-          if (p && typeof p.then === "function") p.then(() => audio.pause()).catch(() => {});
-          else audio.pause();
-        } catch (_) {}
-        audio.currentTime = 0;
+    async function initAudioOnce() {
+      if (state.audioUnlocked && tickBuffer) return;
+      if (state.audioInitPromise) return state.audioInitPromise;
+      state.audioInitPromise = (async () => {
+        if (!state.audioCtx) {
+          state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (state.audioCtx.state !== "running") {
+          await state.audioCtx.resume();
+        }
+        if (!tickGain) {
+          tickGain = state.audioCtx.createGain();
+          tickGain.gain.value = 0.32;
+          tickGain.connect(state.audioCtx.destination);
+        }
+        if (!tickBuffer && typeTickAudio) {
+          const src = new URL(typeTickAudio.getAttribute("src"), location.href).href;
+          const res = await fetch(src);
+          const arr = await res.arrayBuffer();
+          tickBuffer = await state.audioCtx.decodeAudioData(arr);
+          console.log("[audio] unlocked, tick buffer ready:", src);
+        }
+        state.audioUnlocked = true;
+      })().catch((err) => {
+        console.error("[audio] failed to unlock/decode type tick", err);
+      }).finally(() => {
+        state.audioInitPromise = null;
       });
+      return state.audioInitPromise;
     }
 
     function setSfxEnabled(enabled) {
@@ -688,24 +705,18 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       }
     }
 
-    function playSfx(name, { volume = 0.45 } = {}) {
+    function playTypeTick(charCounter, ch) {
       if (!state.sfxEnabled || !state.audioUnlocked) return;
-      if (name === "tick" && typeTickAudio) {
-        try {
-          typeTickAudio.pause();
-          typeTickAudio.currentTime = 0;
-          typeTickAudio.volume = volume;
-          typeTickAudio.play().catch(() => {});
-        } catch (_) {}
-      }
-    }
-
-    function playTypeTick(charCounter) {
+      if (!tickBuffer || !tickGain || !state.audioCtx || state.audioCtx.state !== "running") return;
+      if (ch === " " || ch === "\n") return;
       const now = performance.now();
       if (charCounter % 3 !== 0) return;
       if (now - state.lastTypeTickAt < 60) return;
       state.lastTypeTickAt = now;
-      playSfx("tick", { volume: 0.22 });
+      const source = state.audioCtx.createBufferSource();
+      source.buffer = tickBuffer;
+      source.connect(tickGain);
+      source.start();
     }
 
     function playJingle(kind) {
@@ -831,6 +842,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       errorAckBtn.disabled = false;
       errorAckBtn.focus();
       errorAckBtn.onclick = () => {
+        initAudioOnce();
         if (errorAckBtn.disabled) return;
         errorAckBtn.disabled = true;
         errorOverlay.classList.add("hidden");
@@ -858,6 +870,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       rewardClaimBtn.disabled = false;
       rewardClaimBtn.focus();
       rewardClaimBtn.onclick = () => {
+        initAudioOnce();
         if (rewardClaimBtn.disabled) return;
         rewardClaimBtn.disabled = true;
         rewardOverlay.classList.add("hidden");
@@ -977,6 +990,7 @@ The challenge has been issued.`;
       };
 
       introAcceptBtn.onclick = () => {
+        initAudioOnce();
         if (flow.controller && flow.controller.typing) flow.controller.skip();
         state.screen = "password";
         render();
@@ -1080,7 +1094,7 @@ The gate glows faintly. It waits.`;
         }
       };
 
-      document.getElementById("passBtn").onclick = submitPassword;
+      document.getElementById("passBtn").onclick = () => { initAudioOnce(); submitPassword(); };
       input.addEventListener("keydown", (e) => { if (e.key === "Enter") submitPassword(); });
       flow.onKeyDown = onKeyDown;
       state.trialFlow = flow;
@@ -1109,7 +1123,7 @@ The gate glows faintly. It waits.`;
         if (controller.skipRequested) return finishNow();
         i += 1;
         el.textContent = text.slice(0, i);
-        playTypeTick(i);
+        playTypeTick(i, text[i - 1]);
         if (i >= text.length) {
           controller.typing = false;
           onDone();
@@ -1145,7 +1159,7 @@ The gate glows faintly. It waits.`;
         const txt = parts[pIndex] || "";
         cIndex += 1;
         pEls[pIndex].textContent = txt.slice(0, cIndex);
-        playTypeTick(cIndex);
+        playTypeTick(cIndex, txt[cIndex - 1]);
         if (cIndex >= txt.length) {
           pIndex += 1;
           cIndex = 0;
@@ -1275,6 +1289,7 @@ The gate glows faintly. It waits.`;
             <button id="submitMulti">Seal the Offerings</button>
           `;
           host.querySelector("#submitMulti").onclick = () => {
+            initAudioOnce();
             if (state.questSubmissionLocked) return;
             const selected = [...host.querySelectorAll('input[type="checkbox"]:checked')].map(c => c.value);
             const sortedA = [...selected].sort().join("|");
@@ -1453,8 +1468,14 @@ And now the Princess Wife speaks not as legend, but as herself: she loves her Ha
     }
 
     achievementBtn.addEventListener("click", continueAfterAchievement);
-    document.addEventListener("keydown", ensureAudioUnlocked, { once: true });
-    document.addEventListener("pointerdown", ensureAudioUnlocked, { once: true });
+    document.addEventListener("pointerdown", initAudioOnce, { once: true });
+    const onFirstAudioKeydown = (e) => {
+      if (e.code === "Space" || e.key === " " || e.key === "Enter") {
+        initAudioOnce();
+        document.removeEventListener("keydown", onFirstAudioKeydown);
+      }
+    };
+    document.addEventListener("keydown", onFirstAudioKeydown);
     window.setSfxEnabled = setSfxEnabled;
 
     // Floating pixel hearts/mushrooms
