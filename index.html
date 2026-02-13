@@ -955,12 +955,7 @@ The challenge has been issued.`;
         });
       }
 
-      const onKeyDown = (e) => {
-        if (e.code !== "Space") return;
-        const active = document.activeElement;
-        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
-        e.preventDefault();
-
+      function continueIntroFlow() {
         if (flow.controller && flow.controller.typing) {
           flow.controller.skip();
           return;
@@ -969,6 +964,14 @@ The challenge has been issued.`;
         if (flow.stage === "title") {
           startStoryTyping();
         }
+      }
+
+      const onKeyDown = (e) => {
+        if (e.code !== "Space") return;
+        const active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+        e.preventDefault();
+        continueIntroFlow();
       };
 
       introAcceptBtn.onclick = () => {
@@ -979,6 +982,7 @@ The challenge has been issued.`;
       };
 
       flow.onKeyDown = onKeyDown;
+      flow.onTapCleanup = bindContinueTap(continueIntroFlow);
       state.trialFlow = flow;
       document.addEventListener("keydown", onKeyDown);
     }
@@ -1060,12 +1064,7 @@ The gate glows faintly. It waits.`;
         }
       }
 
-      const onKeyDown = (e) => {
-        if (e.code !== "Space") return;
-        const active = document.activeElement;
-        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
-        e.preventDefault();
-
+      function continuePasswordFlow() {
         if (flow.controller && flow.controller.typing) {
           flow.controller.skip();
           return;
@@ -1074,11 +1073,20 @@ The gate glows faintly. It waits.`;
         if (flow.stage === "title") {
           startPasswordStory();
         }
+      }
+
+      const onKeyDown = (e) => {
+        if (e.code !== "Space") return;
+        const active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+        e.preventDefault();
+        continuePasswordFlow();
       };
 
       document.getElementById("passBtn").onclick = () => { initAudioOnce(); submitPassword(); };
       input.addEventListener("keydown", (e) => { if (e.key === "Enter") submitPassword(); });
       flow.onKeyDown = onKeyDown;
+      flow.onTapCleanup = bindContinueTap(continuePasswordFlow);
       state.trialFlow = flow;
       document.addEventListener("keydown", onKeyDown);
     }
@@ -1087,7 +1095,29 @@ The gate glows faintly. It waits.`;
       if (state.trialFlow && state.trialFlow.onKeyDown) {
         document.removeEventListener("keydown", state.trialFlow.onKeyDown);
       }
+      if (state.trialFlow && state.trialFlow.onTapCleanup) {
+        state.trialFlow.onTapCleanup();
+      }
       state.trialFlow = null;
+    }
+
+    function shouldTreatAsContinueClick(e) {
+      const target = e.target;
+      if (!target || !screenEl.contains(target)) return false;
+      return !target.closest("button, a, input, textarea, select, label, .option");
+    }
+
+    function bindContinueTap(handler) {
+      let lastTapAt = 0;
+      const onPointerUp = (e) => {
+        if (!shouldTreatAsContinueClick(e)) return;
+        const now = performance.now();
+        if (now - lastTapAt < 250) return;
+        lastTapAt = now;
+        handler();
+      };
+      screenEl.addEventListener("pointerup", onPointerUp);
+      return () => screenEl.removeEventListener("pointerup", onPointerUp);
     }
 
     function typewriterText(el, text, speed, onDone) {
@@ -1205,13 +1235,8 @@ The gate glows faintly. It waits.`;
         });
       }
 
-      const onKeyDown = (e) => {
-        if (e.code !== "Space") return;
-        const active = document.activeElement;
-        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+      function continueTrialFlow() {
         if (flow.stage === "options") return;
-        e.preventDefault();
-
         if (flow.controller && flow.controller.typing) {
           flow.controller.skip();
           return;
@@ -1222,9 +1247,18 @@ The gate glows faintly. It waits.`;
         } else if (flow.stage === "story_done") {
           startQuestionStage();
         }
+      }
+
+      const onKeyDown = (e) => {
+        if (e.code !== "Space") return;
+        const active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+        e.preventDefault();
+        continueTrialFlow();
       };
 
       flow.onKeyDown = onKeyDown;
+      flow.onTapCleanup = bindContinueTap(continueTrialFlow);
       state.trialFlow = flow;
       document.addEventListener("keydown", onKeyDown);
     }
@@ -1395,13 +1429,8 @@ And now the Princess Wife speaks not as legend, but as herself: she loves her Ha
         });
       }
 
-      const onKeyDown = (e) => {
-        if (e.code !== "Space") return;
-        const active = document.activeElement;
-        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+      function continueFinalFlow() {
         if (flow.stage === "stats") return;
-        e.preventDefault();
-
         if (flow.controller && flow.controller.typing) {
           flow.controller.skip();
           return;
@@ -1417,9 +1446,18 @@ And now the Princess Wife speaks not as legend, but as herself: she loves her Ha
           promptEl.classList.add("hidden");
           statsEl.classList.remove("hidden");
         }
+      }
+
+      const onKeyDown = (e) => {
+        if (e.code !== "Space") return;
+        const active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+        e.preventDefault();
+        continueFinalFlow();
       };
 
       flow.onKeyDown = onKeyDown;
+      flow.onTapCleanup = bindContinueTap(continueFinalFlow);
       state.trialFlow = flow;
       document.addEventListener("keydown", onKeyDown);
     }
