@@ -378,6 +378,37 @@
       background: rgba(255, 241, 208, 0.08);
     }
 
+
+    .quest-banner {
+      display: block;
+      height: 90px;
+      max-width: 100%;
+      width: auto;
+      margin: 6px auto 12px;
+      image-rendering: pixelated;
+      object-fit: contain;
+    }
+
+    .quest-deco {
+      position: absolute;
+      inset: 92px 0 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .deco {
+      position: absolute;
+      image-rendering: pixelated;
+      opacity: 0.15;
+      animation: decoFloat 8s ease-in-out infinite;
+    }
+
+    @keyframes decoFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
     @media (max-width: 760px) {
       .witch-wrap { width: 140px; right: 8px; }
       .bubble { font-size: 12px; }
@@ -395,6 +426,7 @@
   <div class="floaters" id="floaters"></div>
 
   <main class="game-wrap">
+    <div id="questDeco" class="quest-deco" aria-hidden="true"></div>
     <section id="screen" class="panel"></section>
   </main>
 
@@ -591,6 +623,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
     const errorAckBtn = document.getElementById("errorAckBtn");
     const typeTickAudio = document.getElementById("typeTickAudio");
     const jingleAudio = document.getElementById("jingleAudio");
+    const questDecoEl = document.getElementById("questDeco");
 
     function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -649,6 +682,56 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       if (state.sfxEnabled && state.audioUnlocked) {
         jingleAudio.volume = kind === "finale" ? 0.62 : 0.5;
         jingleAudio.play().catch(() => {});
+      }
+    }
+
+    function applyThemeForScreen(themeKey) {
+      const themes = {
+        intro: { banner: "assets/banners/prologue.png", deco: [["assets/deco/sparkle.png", "10%", "16%", "24px"], ["assets/deco/sparkle.png", "84%", "22%", "20px"], ["assets/deco/mushroom.png", "88%", "72%", "34px"]] },
+        quest0: { banner: "assets/banners/quest0_gate.png", deco: [["assets/deco/sparkle.png", "12%", "20%", "24px"], ["assets/deco/sparkle.png", "82%", "18%", "20px"], ["assets/deco/mushroom.png", "86%", "74%", "34px"]] },
+        quest1: { banner: "assets/banners/quest1_fluorescents.png", deco: [["assets/deco/office_chair.png", "8%", "76%", "36px"], ["assets/deco/office_chair.png", "88%", "76%", "36px"], ["assets/deco/badge_scanner.png", "83%", "16%", "24px"]] },
+        quest2: { banner: "assets/banners/quest2_berlin.png", deco: [["assets/deco/berlin_bear.png", "11%", "70%", "36px"], ["assets/deco/kebab.png", "86%", "68%", "34px"]] },
+        quest3: { banner: "assets/banners/quest3_string.png", deco: [["assets/deco/thread_sparkle.png", "12%", "24%", "22px"], ["assets/deco/sparkle.png", "84%", "24%", "22px"]] },
+        quest4: { banner: "assets/banners/quest4_nida.png", deco: [["assets/deco/sand_speck.png", "9%", "76%", "28px"], ["assets/deco/mushroom.png", "88%", "72%", "32px"]] },
+        quest5: { banner: "assets/banners/quest5_letter.png", deco: [["assets/deco/heart.png", "10%", "22%", "24px"], ["assets/deco/sparkle.png", "86%", "24%", "22px"]] },
+        quest6: { banner: "assets/banners/quest6_flowers_ring.png", deco: [["assets/deco/petal.png", "12%", "18%", "22px"], ["assets/deco/petal.png", "22%", "28%", "18px"], ["assets/deco/champagne.png", "88%", "70%", "30px"]] },
+        quest7: { banner: "assets/banners/quest7_food.png", deco: [["assets/deco/dice.png", "10%", "72%", "30px"], ["assets/deco/remote.png", "86%", "72%", "30px"], ["assets/deco/heart.png", "82%", "24%", "18px"]] },
+        final: { banner: "assets/banners/final_home.png", deco: [["assets/deco/heart.png", "10%", "20%", "24px"], ["assets/deco/heart.png", "86%", "22%", "20px"], ["assets/deco/mushroom.png", "12%", "74%", "30px"], ["assets/deco/sparkle.png", "88%", "72%", "20px"]] }
+      };
+      const theme = themes[themeKey];
+      const heading = screenEl.querySelector("h1, h2");
+      let banner = document.getElementById("questBanner");
+      if (!banner && heading) {
+        banner = document.createElement("img");
+        banner.id = "questBanner";
+        banner.className = "quest-banner";
+        banner.alt = "";
+        heading.insertAdjacentElement("afterend", banner);
+      }
+      if (banner) {
+        if (theme && theme.banner) {
+          banner.src = theme.banner;
+          banner.classList.remove("hidden");
+        } else {
+          banner.removeAttribute("src");
+          banner.classList.add("hidden");
+        }
+      }
+      if (questDecoEl) {
+        questDecoEl.innerHTML = "";
+        if (theme && theme.deco) {
+          theme.deco.forEach(([src, left, top, size], i) => {
+            const img = document.createElement("img");
+            img.className = "deco";
+            img.src = src;
+            img.alt = "";
+            img.style.left = left;
+            img.style.top = top;
+            img.style.width = size;
+            img.style.animationDelay = `${i * 0.8}s`;
+            questDecoEl.appendChild(img);
+          });
+        }
       }
     }
 
@@ -816,6 +899,7 @@ The challenge has been issued.`;
         <div id="introPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
         <button id="introAcceptBtn" class="hidden">ACCEPT THE CHALLENGE AND SAVE PRINCESS WIFE</button>
       `;
+      applyThemeForScreen("intro");
 
       const storyEl = document.getElementById("introStory");
       const introPrompt = document.getElementById("introPrompt");
@@ -896,6 +980,7 @@ The gate glows faintly. It waits.`;
           <div id="passStatus" class="status"></div>
         </div>
       `;
+      applyThemeForScreen("quest0");
 
       const storyEl = document.getElementById("passStory");
       const promptEl = document.getElementById("passPrompt");
@@ -1040,7 +1125,7 @@ The gate glows faintly. It waits.`;
       return controller;
     }
 
-    function renderStagedTrial({ title, storytellerParagraphs, questionText, buildOptions, noDivider = false }) {
+    function renderStagedTrial({ title, storytellerParagraphs, questionText, buildOptions, noDivider = false, themeKey = null }) {
       clearTrialFlow();
       playJingle("quest");
       screenEl.innerHTML = `
@@ -1050,6 +1135,7 @@ The gate glows faintly. It waits.`;
         <p id="trialQuestion" class="typed-question hidden"></p>
         <div id="trialOptions" class="hidden"></div>
       `;
+      applyThemeForScreen(themeKey);
 
       const promptEl = document.getElementById("trialPrompt");
       const storyEl = document.getElementById("trialStory");
@@ -1115,6 +1201,7 @@ The gate glows faintly. It waits.`;
         title: `Quest ${level.id}: ${level.title || "The Storyteller Speaks"}`,
         storytellerParagraphs: level.storyteller || [`The Storyteller narrows ancient eyes at ${state.currentHero}, while ${state.currentWife} awaits rescue.`],
         questionText: level.prompt,
+        themeKey: `quest${level.id}`,
         noDivider: level.id === 4,
         buildOptions: (host) => {
           const options = level.options.map((opt, i) => `
@@ -1141,6 +1228,7 @@ The gate glows faintly. It waits.`;
         title: `Quest ${level.id}: ${level.title || "Double Truth"}`,
         storytellerParagraphs: level.storyteller || [`${state.currentHero} must deliver precision before the Witch writes another smug note.`],
         questionText: level.prompt,
+        themeKey: `quest${level.id}`,
         buildOptions: (host) => {
           const rows = level.options.map((opt, i) => `
             <label class="option"><input type="checkbox" value="${opt.replace(/"/g, '&quot;')}" /> ${String.fromCharCode(65 + i)}) ${opt}</label>
@@ -1169,6 +1257,7 @@ The gate glows faintly. It waits.`;
         title: `Quest ${level.id}: ${level.title || "Geometry of Destiny"}`,
         storytellerParagraphs: level.storyteller || ["The Storyteller studies the parchment and waits for precision."],
         questionText: level.prompt,
+        themeKey: `quest${level.id}`,
         buildOptions: (host) => {
           const optionRows = (level.options || []).map((opt, i) => `<div class="option">${String.fromCharCode(65 + i)}) ${opt}</div>`).join("");
           host.innerHTML = `
@@ -1253,6 +1342,7 @@ And now the Princess Wife speaks not as legend, but as herself: she loves her Ha
           </div>
         </div>
       `;
+      applyThemeForScreen("final");
 
       const storyEl = document.getElementById("finalStory");
       const promptEl = document.getElementById("finalPrompt");
