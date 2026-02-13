@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Love Quest</title>
+  <style>
+    :root {
+      --plum: #2a1030;
+      --pink: #ff3fa7;
+      --cream: #fff1d0;
+      --black: #0b0a0d;
+      --deep: #16081b;
+      --success: #7fffd4;
+      --danger: #ff6b6b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Courier New", monospace;
+      background: radial-gradient(circle at top, #3b1445, var(--deep) 60%);
+      color: var(--cream);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .scanlines::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.03),
+        rgba(255, 255, 255, 0.03) 2px,
+        transparent 2px,
+        transparent 4px
+      );
+      z-index: 999;
+    }
+
+    .hud {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: #000;
+      color: var(--cream);
+      padding: 10px 16px;
+      border-bottom: 4px solid var(--pink);
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-weight: 700;
+      box-shadow: 0 4px 0 #fff;
+      gap: 10px;
+    }
+
+    .hud span { font-size: clamp(11px, 1.55vw, 15px); white-space: nowrap; }
+    #hudLevel { justify-self: start; }
+    #hudMushrooms { justify-self: center; text-align: center; }
+    #hudMistakes { justify-self: end; text-align: right; white-space: normal; max-width: min(48vw, 540px); }
+
+    .game-wrap {
+      position: relative;
+      padding: 92px 16px 32px;
+      max-width: 980px;
+      margin: 0 auto;
+      min-height: 100vh;
+      z-index: 2;
+    }
+
+    .panel {
+      background: rgba(11, 10, 13, 0.85);
+      border: 4px solid var(--cream);
+      box-shadow: 0 0 0 4px var(--black), 0 0 0 8px var(--pink);
+      padding: 18px;
+      margin: 20px auto;
+      max-width: 900px;
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+      line-height: 1.2;
+      text-transform: uppercase;
+      text-shadow: 2px 2px 0 var(--black);
+      text-align: center;
+    }
+
+    h1 { color: var(--pink); font-size: clamp(24px, 4vw, 42px); }
+    h2 { color: var(--pink); font-size: clamp(20px, 3vw, 30px); }
+
+    p { line-height: 1.45; font-size: 16px; }
+
+    .rules {
+      border: 3px dashed var(--pink);
+      padding: 14px;
+      margin: 16px 0;
+      background: rgba(255, 63, 167, 0.09);
+    }
+
+    .btn, button {
+      background: var(--pink);
+      color: var(--cream);
+      border: 0;
+      padding: 10px 16px;
+      font-family: inherit;
+      font-weight: 700;
+      text-transform: uppercase;
+      cursor: pointer;
+      margin: 10px auto 0;
+      display: block;
+      box-shadow: 0 4px 0 #7f1f56, 4px 4px 0 #000;
+      transition: transform 0.08s;
+    }
+
+    .btn:active, button:active { transform: translateY(2px); box-shadow: 0 2px 0 #7f1f56, 2px 2px 0 #000; }
+
+    .options {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .option {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: #3f1444;
+      border: 2px solid var(--cream);
+      color: var(--cream);
+      padding: 12px;
+      font-size: 15px;
+      box-shadow: 3px 3px 0 #000;
+      margin: 0;
+    }
+
+    .option:hover { border-color: var(--pink); }
+
+    input[type="text"] {
+      width: min(420px, 100%);
+      background: #140a1a;
+      color: var(--cream);
+      border: 3px solid var(--cream);
+      padding: 10px;
+      font-family: inherit;
+      font-size: 16px;
+      box-shadow: 3px 3px 0 #000;
+      text-transform: lowercase;
+    }
+
+    .shake {
+      animation: shake 0.34s linear;
+    }
+
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      50% { transform: translateX(6px); }
+      75% { transform: translateX(-5px); }
+      100% { transform: translateX(0); }
+    }
+
+    .achievement-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 250;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 18px;
+    }
+
+    .achievement-card {
+      max-width: 640px;
+      width: 100%;
+      background: #18081f;
+      border: 4px solid var(--success);
+      box-shadow: 0 0 0 4px #000, 0 0 0 8px var(--pink);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .achievement-card h3 { color: var(--success); margin-bottom: 8px; }
+
+    .reward-card {
+      max-width: 520px;
+      width: 100%;
+      background: #1a0b21;
+      border: 4px solid var(--cream);
+      box-shadow: 0 0 0 4px #000, 0 0 0 8px var(--pink);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .error-card {
+      max-width: 560px;
+      width: 100%;
+      background: #220c24;
+      border: 4px solid var(--danger);
+      box-shadow: 0 0 0 4px #000, 0 0 0 8px var(--pink);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .mushroom-icon {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 12px;
+      image-rendering: pixelated;
+      filter: drop-shadow(3px 3px 0 #000);
+    }
+
+    .hidden { display: none !important; }
+
+    .status {
+      min-height: 24px;
+      font-weight: 700;
+      margin-top: 10px;
+    }
+
+    .good { color: var(--success); }
+    .bad { color: var(--danger); }
+
+    .floaters {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .floater {
+      position: absolute;
+      font-size: 20px;
+      opacity: 0.18;
+      animation: drift linear infinite;
+    }
+
+    @keyframes drift {
+      from { transform: translateY(110vh); }
+      to { transform: translateY(-20vh); }
+    }
+
+    .witch-wrap {
+      position: fixed;
+      right: 14px;
+      bottom: 10px;
+      z-index: 180;
+      width: 170px;
+      pointer-events: none;
+    }
+
+    .witch {
+      width: 90px;
+      height: 90px;
+      margin-left: auto;
+      display: block;
+      image-rendering: pixelated;
+      shape-rendering: crispEdges;
+      filter: drop-shadow(0 0 0 var(--cream)) drop-shadow(3px 3px 0 #000);
+    }
+
+    .bubble {
+      max-width: 260px;
+      margin-left: auto;
+      margin-bottom: 10px;
+      background: var(--cream);
+      color: #1a0c1e;
+      padding: 10px;
+      border: 3px solid #000;
+      box-shadow: 4px 4px 0 var(--pink);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 240ms ease;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .bubble.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .error-bubble {
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      z-index: 190;
+      margin: 0;
+      max-width: min(320px, calc(100vw - 28px));
+      pointer-events: none;
+    }
+
+    .space-prompt {
+      text-align: center;
+      margin: 12px 0;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #ffb9de;
+      animation: promptFlash 0.9s steps(2, end) infinite;
+    }
+
+    @keyframes promptFlash {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0.2; }
+    }
+
+    .story-paper {
+      background: rgba(255, 241, 208, 0.09);
+      border: 3px solid var(--cream);
+      box-shadow: 3px 3px 0 #000;
+      padding: 12px;
+      margin: 10px 0 14px;
+      min-height: 74px;
+    }
+
+    .story-paper p {
+      margin: 0;
+      line-height: 1.45;
+      color: var(--cream);
+    }
+
+    .story-paper p + p {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(255, 241, 208, 0.6);
+    }
+
+    .story-paper.no-divider p + p {
+      padding-top: 0;
+      border-top: 0;
+    }
+
+    .intro-title-cinematic {
+      animation: introTitleIn 360ms steps(4, end);
+      transform-origin: center;
+    }
+
+    @keyframes introTitleIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .typed-question {
+      min-height: 48px;
+      margin: 0 0 12px;
+      line-height: 1.45;
+    }
+
+
+    .final-stats p {
+      margin: 0;
+      line-height: 1.45;
+      color: var(--cream);
+    }
+
+    .final-stats p + p {
+      margin-top: 10px;
+    }
+
+    .level-meta {
+      margin: 0 0 8px;
+      color: #ffb9de;
+      font-size: 14px;
+    }
+
+    .letter {
+      margin-top: 12px;
+      border: 2px solid var(--pink);
+      padding: 12px;
+      background: rgba(255, 241, 208, 0.08);
+    }
+
+
+    .quest-banner {
+      display: block;
+      height: 90px;
+      max-width: 100%;
+      width: auto;
+      margin: 6px auto 12px;
+      image-rendering: pixelated;
+      object-fit: contain;
+    }
+
+    .quest-deco {
+      position: absolute;
+      inset: 92px 0 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .deco {
+      position: absolute;
+      image-rendering: pixelated;
+      opacity: 0.15;
+      animation: decoFloat 8s ease-in-out infinite;
+    }
+
+    @keyframes decoFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @media (max-width: 760px) {
+      .witch-wrap { width: 140px; right: 8px; }
+      .bubble { font-size: 12px; }
+      .game-wrap { padding-top: 86px; }
+    }
+  </style>
+</head>
+<body class="scanlines">
+  <div class="hud">
+    <span id="hudLevel">LEVEL 0/7</span>
+    <span id="hudMushrooms">LOVE 🍄 COLLECTED x0</span>
+    <span id="hudMistakes">WITCH SATISFACTION INDEX x0</span>
+  </div>
+
+  <div class="floaters" id="floaters"></div>
+
+  <main class="game-wrap">
+    <div id="questDeco" class="quest-deco" aria-hidden="true"></div>
+    <section id="screen" class="panel"></section>
+  </main>
+
+  <div id="errorOverlay" class="achievement-overlay hidden" aria-live="polite">
+    <div class="error-card">
+      <h3>Incorrect Answer</h3>
+      <p id="errorMessage"></p>
+      <p id="errorCount"></p>
+      <button id="errorAckBtn">ACKNOWLEDGE MY MISTAKE</button>
+    </div>
+  </div>
+
+  <div id="achievementOverlay" class="achievement-overlay hidden">
+    <div class="achievement-card">
+      <h3 id="achievementTitle"></h3>
+      <p id="achievementText"></p>
+      <button id="achievementBtn">Continue</button>
+    </div>
+  </div>
+
+  <div id="rewardOverlay" class="achievement-overlay hidden">
+    <div class="reward-card">
+      <svg class="mushroom-icon" viewBox="0 0 16 16" role="img" aria-label="Love Mushroom pixel art">
+        <rect width="16" height="16" fill="#000" />
+        <rect x="1" y="1" width="14" height="7" fill="#ff3fa7" />
+        <rect x="2" y="2" width="2" height="2" fill="#fff1d0" />
+        <rect x="6" y="3" width="2" height="2" fill="#fff1d0" />
+        <rect x="11" y="2" width="2" height="2" fill="#fff1d0" />
+        <rect x="3" y="8" width="10" height="2" fill="#2a1030" />
+        <rect x="5" y="10" width="6" height="5" fill="#fff1d0" />
+        <rect x="6" y="11" width="1" height="1" fill="#000" />
+        <rect x="9" y="11" width="1" height="1" fill="#000" />
+      </svg>
+      <p>You found a Love Mushroom!</p>
+      <p id="rewardCount"></p>
+      <button id="rewardClaimBtn">CLAIM A LOVE MUSHROOM</button>
+    </div>
+  </div>
+
+  <audio id="typeTickAudio" src="./assets/sfx/type-tick.mp3" preload="auto"></audio>
+  <audio id="jingleAudio" preload="auto"></audio>
+
+  <script>
+    // ===== Editable content data =====
+    const heroNames = ["Mr. Haban", "Cozy Boy", "Juicy Booty", "Husband", "Captain America"];
+    const wifeNames = ["Princess Wife", "Wifey", "Queen of Mushrooms", "Keeper of Cozy"];
+
+    const witchLines = {
+      wrong: [
+        "The Witch delights in this error. The Hero may attempt redemption.",
+        "Incorrect. The Witch records the mistake with glittery ink.",
+        "The Princess remains snatched. Focus, Cozy Boy.",
+        "The Witch cackles softly. The Storyteller sighs.",
+        "A wrong answer. The Witch’s petty heart grows three sizes."
+      ],
+      achievement: [
+        "Hmph. The Hero remembers. Annoying.",
+        "One Love Mushroom restored. The Witch is displeased.",
+        "Progress is noted. Grudgingly.",
+        "The Witch updates her grudges."
+      ],
+      random: [
+        "The Witch wonders if the Hero is truly a Cozy Boy.",
+        "Blankets were invented for a reason.",
+        "The scoreboard trembles."
+      ]
+    };
+
+    // Reusable rotating wrong-answer messages for the error bubble
+    const errorBubbleMessages = [
+      "You know better, husband",
+      "Wrong answer. Try again.",
+      "The witch is pleased. Unfortunately.",
+      "Nope. You are not a cozy boy",
+      "Incorrect. The princess remains snatched."
+    ];
+
+    const levels = [
+      {
+        id: 1,
+        title: "The Corporate Fluorescent Chandeliers",
+        storyteller: "The Storyteller opens the First Chapter beneath corporate fluorescent chandeliers and respectable levels of excitement. Peace signs flashed each time the Princess Wife prepared to exit the room, unaware that destiny had quietly RSVP’d. It was an unlikely birthplace for legend. Badge scanners beeped. Polite laughter echoed. Ambition hummed in sterile light. The Witch herself scoffed — nothing romantic survives quarterly objectives. After all, Mr. Haban had once ignored the Queen of Mushrooms on Slack… and, with astonishing confidence, declared that she must surely be much older. And yet, beneath those unforgiving lights, something shifted. The Witch did not approve. Fate did not ask.",
+        prompt: "In this most improbable beginning, what peculiar obsession did the Princess Wife confess during the corporate feast?",
+        type: "single",
+        options: ["Frogs in business attire", "Baby cows", "Pictures of pooping dogs", "Corporate growth acceleration"],
+        correct: "Baby cows",
+        achievementTitle: "BOVINE PROPHECY RECALLED",
+        achievementText: "The Hero remembers the sacred obsession. The Witch frowns."
+      },
+      {
+        id: 2,
+        title: "The Trial of Berlin",
+        storyteller: "The Storyteller turns the NEXT page, sealed with the crest of Berlin. For the first time, Cozy Boy and the Keeper of Cozy stepped beyond corporate halls and crossed great distance to test whether their Instagram sorcery could survive reality. Would digital charm dissolve into silence? Would Husband and Wifey discover awkward stillness instead of magic? The Witch leaned forward eagerly, convinced the encounter would collapse under its own hype. But Berlin does not bend to doubt.",
+        prompt: "In the grand city of Berlin, the vibe trial was sealed by sacred offerings from Juicy Booty to the Princess Wife. Select all that apply.",
+        type: "multi",
+        options: ["Sharing fries in a kebab shop", "German beer", "Four Nothing But Thieves concert tickets", "A plush cow"],
+        correctSet: ["Four Nothing But Thieves concert tickets", "A plush cow"],
+        achievementTitle: "OFFERINGS OF BERLIN CONFIRMED",
+        achievementText: "Two truths were spoken. The plush prophecy strengthens."
+      },
+      {
+        id: 3,
+        title: "The Invisible String",
+        storyteller: "Berlin passed. And with it, the illusion of coincidence. After that chapter, it became increasingly difficult for Captain America and the Queen of Mushrooms to pretend this was temporary. They attempted resistance. Dramatically. Occasionally convincingly. Yet an invisible string tugged between them. It stretched across New York, Croatia, Vilnius, Milan, San Francisco, and Los Angeles. Airports witnessed reunions. Screens glowed deep into the night. The Witch attempted to knot the thread. Fate tightened it instead.",
+        prompt: "During the era of distance and devotion, what sustained the bond between Cozy Boy and his Princess Wife across oceans and time zones?",
+        type: "single",
+        options: ["Frequent flyer miles", "Never stopping Instagram messages", "Frogging", "All of the above"],
+        correct: "All of the above",
+        achievementTitle: "DISTANCE SPELL RESISTED",
+        achievementText: "Miles were defeated. Thumbs proved legendary."
+      },
+      {
+        id: 4,
+        title: "The Dunes of Nida",
+        storyteller: `The Storyteller journeys with the couple to the windswept dunes of Nida, beloved refuge of the Princess Wife and a land the Witch considers far too romantic for her liking.
+
+By day, the Hero and the Queen of Mushrooms moved through their quest with cheerful devotion: beer was raised in celebration, and fried bread was consumed — a local delicacy previously unknown to King Juicy Booty, who approached it with the wide-eyed reverence of a man discovering sacred cuisine.
+
+They explored Tahoe-like forests and wandered the trails by the lagoon, where sunlight filtered through green hush and the world felt unusually enchanted. To deepen the beauty of the mission, the couple took a few mushrooms and watched the landscape turn even more mythic. The Witch lurked at the edge of this joy, offended by how easily the ordinary became magical.
+
+As evening arrived, Cozy Boy and his Princess Wife returned to their humble quarters, wind-touched and content — unaware that a sleepy prophecy was waiting to be spoken.`,
+        prompt: "After this eventful day in Nida, the Princess Wife fell asleep, then awoke cold and confused, repeating a short phrase. What were her exact words?",
+        type: "single",
+        options: ["man linksma", "man karšta", "man šalta", "man nuobodu"],
+        correct: "man šalta",
+        achievementTitle: "THE NIDA CHILL DECIPHERED",
+        achievementText: "The dunes remember. The cold prophecy honored."
+      },
+      {
+        id: 5,
+        title: "The Official Beginning",
+        storyteller: "The Storyteller unveils a chapter heavy with inevitability. Miles multiplied. Screen time reports grew suspicious. Instagram messages conquered waking hours. Frogging escalated beyond reasonable limits. With each visit, affection deepened. Still, Mr. Haban hesitated. The Princess Wife did not fail to notice. The Witch tapped her foot impatiently, muttering about “sweet time.” Eventually, neither Hero nor Keeper of Cozy could deny what destiny had already declared.",
+        prompt: "When did the Hero finally make the official offering of relationship to the Princess Wife?",
+        type: "single",
+        options: ["After the Princess returned home from the California trip in 2024", "Way too late, the Prince loves to take his sweet time", "October 9", "October 6"],
+        correct: "October 6",
+        achievementTitle: "OFFICIAL OFFERING ACKNOWLEDGED",
+        achievementText: "Destiny waited patiently. The Witch did not."
+      },
+      {
+        id: 6,
+        title: "Circle With No Beginning or End",
+        storyteller: "The Storyteller arrives at the neon-lit Ever After Chapel, where vows echoed beneath glowing lights and giggles threatened sacred composure. The officiant spoke of rings as perfect circles — without beginning, without end — symbols of eternity and unbroken devotion. Cozy Boy and Wifey tried very hard not to laugh. They did not succeed. The Witch rolled her eyes dramatically at the geometry. Champagne followed. Then more champagne. The newlyweds ventured into the casino, where multiple highly involved rounds of craps unfolded with dramatic enthusiasm. Fortune tilted wildly. Laughter grew louder. And when the night finally softened, Husband and Princess Wife returned to their hotel suite… where Taco Bell sealed the celebration. The Witch, scandalized by both eternity and tacos, withdrew into shadow.",
+        prompt: "On what date did Captain America and the Queen of Mushrooms stand in the Ever After Chapel and hear love described as a perfect circle?",
+        type: "input",
+        accepted: ["august 24", "august 24th", "aug 24", "8/24", "08/24", "august 24 2025", "august 24, 2025", "8/24/2025", "08/24/2025"],
+        achievementTitle: "THE CIRCLE SERMON SURVIVED",
+        achievementText: "Destiny described geometry. Love persisted."
+      },
+      {
+        id: 7,
+        title: "The Cosy Feast of Destiny",
+        storyteller: "The Storyteller closes the final chapter not with thunder, but with warmth. The Hero and the Princess Wife have found their happily ever after. Not the kind carved in marble, but the kind built quietly — dish by dish, load by load, evening by evening. They are building their cozy home together. They are happy in the mundane. In never-ending dishes and laundry. In making food side by side. In reading quietly. In long walks. In cracking — so much cracking. They know each other’s favorite foods without asking. They speak each other’s language without translating. They finish each other’s thoughts, sentences, and occasionally snacks. Slowly, steadily, they are turning into each other… merging into one unstoppable cozy blop. The Witch watches from afar, baffled and mildly offended that joy can be found in such ordinary magic. And still — for all its simplicity — there is a ritual that seals it every time.",
+        prompt: "The perfect night-in presents itself to the couple. Shrimp tacos from Sunset Cantina. Enchiladas from Celia’s by the Beach. Cold beer opened. The Pitt glowing on the screen. When destiny aligns in this sacred domestic ritual, what phrase erupts from Haban and the Princess Wife?",
+        type: "single",
+        options: ["Lovely jubbly hubby", "Hell fucking yeah", "Give me that sweet sweet loving", "I already watched S02E06"],
+        correct: "Hell fucking yeah",
+        achievementTitle: "COSY FEAST OF DESTINY",
+        achievementText: "The sacred phrase rang out across the kingdom."
+      }
+    ];
+
+
+    // ===== State =====
+    const state = {
+      screen: "intro",
+      levelIndex: 0,
+      mushrooms: 0,
+      mistakes: 0,
+      unlocked: false,
+      currentHero: "",
+      currentWife: "",
+      tauntTimer: null,
+      letterOpen: false,
+      audioCtx: null,
+      trialFlow: null,
+      questSubmissionLocked: false,
+      sfxEnabled: true,
+      audioUnlocked: false,
+      lastTypeTickAt: 0
+    };
+
+    const screenEl = document.getElementById("screen");
+    const overlay = document.getElementById("achievementOverlay");
+    const achievementTitleEl = document.getElementById("achievementTitle");
+    const achievementTextEl = document.getElementById("achievementText");
+    const achievementBtn = document.getElementById("achievementBtn");
+    const rewardOverlay = document.getElementById("rewardOverlay");
+    const rewardCountEl = document.getElementById("rewardCount");
+    const rewardClaimBtn = document.getElementById("rewardClaimBtn");
+    const errorOverlay = document.getElementById("errorOverlay");
+    const errorMessageEl = document.getElementById("errorMessage");
+    const errorCountEl = document.getElementById("errorCount");
+    const errorAckBtn = document.getElementById("errorAckBtn");
+    const typeTickAudio = document.getElementById("typeTickAudio");
+    const jingleAudio = document.getElementById("jingleAudio");
+    const questDecoEl = document.getElementById("questDeco");
+
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    function ensureAudioUnlocked() {
+      if (state.audioUnlocked) return;
+      state.audioUnlocked = true;
+      if (state.audioCtx && state.audioCtx.state === "suspended") {
+        state.audioCtx.resume().catch(() => {});
+      }
+      [typeTickAudio, jingleAudio].forEach((audio) => {
+        if (!audio) return;
+        try {
+          const p = audio.play();
+          if (p && typeof p.then === "function") p.then(() => audio.pause()).catch(() => {});
+          else audio.pause();
+        } catch (_) {}
+        audio.currentTime = 0;
+      });
+    }
+
+    function setSfxEnabled(enabled) {
+      state.sfxEnabled = !!enabled;
+      if (!state.sfxEnabled && jingleAudio) {
+        jingleAudio.pause();
+        jingleAudio.currentTime = 0;
+      }
+    }
+
+    function playSfx(name, { volume = 0.45 } = {}) {
+      if (!state.sfxEnabled || !state.audioUnlocked) return;
+      if (name === "tick" && typeTickAudio) {
+        try {
+          typeTickAudio.pause();
+          typeTickAudio.currentTime = 0;
+          typeTickAudio.volume = volume;
+          typeTickAudio.play().catch(() => {});
+        } catch (_) {}
+      }
+    }
+
+    function playTypeTick(charCounter) {
+      const now = performance.now();
+      if (charCounter % 3 !== 0) return;
+      if (now - state.lastTypeTickAt < 60) return;
+      state.lastTypeTickAt = now;
+      playSfx("tick", { volume: 0.22 });
+    }
+
+    function playJingle(kind) {
+      if (!jingleAudio) return;
+      jingleAudio.pause();
+      jingleAudio.currentTime = 0;
+      jingleAudio.loop = false;
+      jingleAudio.src = kind === "finale" ? "./assets/sfx/finale-jingle.mp3" : "./assets/sfx/quest-jingle.mp3";
+      jingleAudio.load();
+      if (state.sfxEnabled && state.audioUnlocked) {
+        jingleAudio.volume = kind === "finale" ? 0.62 : 0.5;
+        jingleAudio.play().catch(() => {});
+      }
+    }
+
+    function applyThemeForScreen(themeKey) {
+      const themes = {
+        intro: { banner: "assets/banners/prologue.png", deco: [["assets/deco/sparkle.png", "10%", "16%", "24px"], ["assets/deco/sparkle.png", "84%", "22%", "20px"], ["assets/deco/mushroom.png", "88%", "72%", "34px"]] },
+        quest0: { banner: "assets/banners/quest0_gate.png", deco: [["assets/deco/sparkle.png", "12%", "20%", "24px"], ["assets/deco/sparkle.png", "82%", "18%", "20px"], ["assets/deco/mushroom.png", "86%", "74%", "34px"]] },
+        quest1: { banner: "assets/banners/quest1_fluorescents.png", deco: [["assets/deco/office_chair.png", "8%", "76%", "36px"], ["assets/deco/office_chair.png", "88%", "76%", "36px"], ["assets/deco/badge_scanner.png", "83%", "16%", "24px"]] },
+        quest2: { banner: "assets/banners/quest2_berlin.png", deco: [["assets/deco/berlin_bear.png", "11%", "70%", "36px"], ["assets/deco/kebab.png", "86%", "68%", "34px"]] },
+        quest3: { banner: "assets/banners/quest3_string.png", deco: [["assets/deco/thread_sparkle.png", "12%", "24%", "22px"], ["assets/deco/sparkle.png", "84%", "24%", "22px"]] },
+        quest4: { banner: "assets/banners/quest4_nida.png", deco: [["assets/deco/sand_speck.png", "9%", "76%", "28px"], ["assets/deco/mushroom.png", "88%", "72%", "32px"]] },
+        quest5: { banner: "assets/banners/quest5_letter.png", deco: [["assets/deco/heart.png", "10%", "22%", "24px"], ["assets/deco/sparkle.png", "86%", "24%", "22px"]] },
+        quest6: { banner: "assets/banners/quest6_flowers_ring.png", deco: [["assets/deco/petal.png", "12%", "18%", "22px"], ["assets/deco/petal.png", "22%", "28%", "18px"], ["assets/deco/champagne.png", "88%", "70%", "30px"]] },
+        quest7: { banner: "assets/banners/quest7_food.png", deco: [["assets/deco/dice.png", "10%", "72%", "30px"], ["assets/deco/remote.png", "86%", "72%", "30px"], ["assets/deco/heart.png", "82%", "24%", "18px"]] },
+        final: { banner: "assets/banners/final_home.png", deco: [["assets/deco/heart.png", "10%", "20%", "24px"], ["assets/deco/heart.png", "86%", "22%", "20px"], ["assets/deco/mushroom.png", "12%", "74%", "30px"], ["assets/deco/sparkle.png", "88%", "72%", "20px"]] }
+      };
+      const theme = themes[themeKey];
+      const heading = screenEl.querySelector("h1, h2");
+      let banner = document.getElementById("questBanner");
+      if (!banner && heading) {
+        banner = document.createElement("img");
+        banner.id = "questBanner";
+        banner.className = "quest-banner";
+        banner.alt = "";
+        heading.insertAdjacentElement("afterend", banner);
+      }
+      if (banner) {
+        if (theme && theme.banner) {
+          banner.src = theme.banner;
+          banner.classList.remove("hidden");
+        } else {
+          banner.removeAttribute("src");
+          banner.classList.add("hidden");
+        }
+      }
+      if (questDecoEl) {
+        questDecoEl.innerHTML = "";
+        if (theme && theme.deco) {
+          theme.deco.forEach(([src, left, top, size], i) => {
+            const img = document.createElement("img");
+            img.className = "deco";
+            img.src = src;
+            img.alt = "";
+            img.style.left = left;
+            img.style.top = top;
+            img.style.width = size;
+            img.style.animationDelay = `${i * 0.8}s`;
+            questDecoEl.appendChild(img);
+          });
+        }
+      }
+    }
+
+    function rotateNames() {
+      state.currentHero = pick(heroNames);
+      state.currentWife = pick(wifeNames);
+    }
+
+    function updateHUD() {
+      const levelLabel = state.screen === "level" ? state.levelIndex + 1 : Math.min(state.levelIndex, 7);
+      document.getElementById("hudLevel").textContent = `LEVEL ${levelLabel}/7`;
+      document.getElementById("hudMushrooms").textContent = `LOVE 🍄 COLLECTED x${state.mushrooms}`;
+      document.getElementById("hudMistakes").textContent = `WITCH SATISFACTION INDEX x${state.mistakes}`;
+    }
+
+    function initAudio() {
+      if (!state.audioCtx) {
+        state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function tone(freq, duration, type = "square", gain = 0.04, delay = 0) {
+      initAudio();
+      const ctx = state.audioCtx;
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      g.gain.value = gain;
+      osc.connect(g).connect(ctx.destination);
+      const start = ctx.currentTime + delay;
+      osc.start(start);
+      g.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      osc.stop(start + duration);
+    }
+
+    function playWrong() {
+      tone(120, 0.18, "sawtooth", 0.06);
+      tone(90, 0.2, "square", 0.05, 0.05);
+    }
+
+    function playCorrect() {
+      [440, 554, 659].forEach((f, i) => tone(f, 0.11, "square", 0.05, i * 0.09));
+    }
+
+    function playAchievement() {
+      [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.12, "triangle", 0.04, i * 0.07));
+    }
+
+    function playVictory() {
+      [523, 659, 784, 1046, 1318, 1568].forEach((f, i) => tone(f, 0.14, "square", 0.05, i * 0.08));
+    }
+
+    function showErrorModal(messageOptional, count) {
+      if (!errorOverlay) return;
+      errorMessageEl.textContent = messageOptional || pick(errorBubbleMessages);
+      errorCountEl.textContent = `WITCH SATISFACTION INDEX: ${count}`;
+      errorOverlay.classList.remove("hidden");
+      if (!errorAckBtn) return;
+      errorAckBtn.disabled = false;
+      errorAckBtn.focus();
+      errorAckBtn.onclick = () => {
+        if (errorAckBtn.disabled) return;
+        errorAckBtn.disabled = true;
+        errorOverlay.classList.add("hidden");
+      };
+    }
+
+    function registerMistake() {
+      state.mistakes += 1;
+      updateHUD();
+      playWrong();
+      showErrorModal(undefined, state.mistakes);
+    }
+
+    function showMushroomReward(onClaimCallback) {
+      state.mushrooms += 1;
+      updateHUD();
+      rewardCountEl.textContent = `LOVE 🍄 COLLECTED: ${state.mushrooms}`;
+      rewardOverlay.classList.remove("hidden");
+      playCorrect();
+      playAchievement();
+      if (!rewardClaimBtn) {
+        if (typeof onClaimCallback === "function") onClaimCallback();
+        return;
+      }
+      rewardClaimBtn.disabled = false;
+      rewardClaimBtn.focus();
+      rewardClaimBtn.onclick = () => {
+        if (rewardClaimBtn.disabled) return;
+        rewardClaimBtn.disabled = true;
+        rewardOverlay.classList.add("hidden");
+        if (typeof onClaimCallback === "function") onClaimCallback();
+      };
+    }
+
+    function showAchievement(level) {
+      achievementTitleEl.textContent = level.achievementTitle;
+      achievementTextEl.textContent = level.achievementText;
+      overlay.classList.remove("hidden");
+      playAchievement();
+      updateHUD();
+    }
+
+    function continueAfterAchievement() {
+      overlay.classList.add("hidden");
+      state.levelIndex += 1;
+      if (state.levelIndex >= levels.length) {
+        state.screen = "final";
+        playVictory();
+      } else {
+        state.screen = "level";
+      }
+      render();
+    }
+
+    function scheduleRandomTaunt() {
+      clearTimeout(state.tauntTimer);
+      if (state.screen !== "level") return;
+      const delay = 18000 + Math.random() * 17000;
+      state.tauntTimer = setTimeout(() => {
+        if (state.screen === "level") {
+          scheduleRandomTaunt();
+        }
+      }, delay);
+    }
+
+    function lockQuestInteractions() {
+      state.questSubmissionLocked = true;
+      screenEl.querySelectorAll("button.option, input, button#submitMulti, button#dateBtn").forEach(el => {
+        el.disabled = true;
+      });
+    }
+
+    function answerCorrect(level) {
+      if (state.questSubmissionLocked) return;
+      lockQuestInteractions();
+      showMushroomReward(() => {
+        showAchievement(level);
+      });
+    }
+
+    function renderIntro() {
+      clearTrialFlow();
+      playJingle("quest");
+      const introStory = `The Storyteller speaks of two people who absolutely refused to let geography win. They survived time zones, airport goodbyes, delayed flights, and the emotional sport of long distance.
+
+Against all logistical reason, they built a life from ordinary magic: dishes that never end, laundry that multiplies, cooking side by side, quiet reading, long walks, and so much cracking. The kind of love that thrives not in fireworks — but in the mundane.
+
+This level of happiness did not go unnoticed.
+
+The Witch of Long Distance, patron saint of rescheduled plans and inconvenient timing, watched with growing irritation. Peace offended her. Stability insulted her. Cozy domestic bliss was, frankly, unacceptable.
+
+So with dramatic flair and suspiciously precise timing, she struck again.
+
+The Princess Wife was snatched.
+
+And the Witch declared that only true love — proven through memory, devotion, and the gathering of all seven Love Mushrooms — would be powerful enough to bring her back.
+
+The challenge has been issued.`;
+
+      screenEl.innerHTML = `
+        <h1 class="intro-title-cinematic">PROLOGUE: THE WITCH RETURNS</h1>
+        <div id="introStory" class="story-paper no-divider hidden"></div>
+        <div id="introPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
+        <button id="introAcceptBtn" class="hidden">ACCEPT THE CHALLENGE AND SAVE PRINCESS WIFE</button>
+      `;
+      applyThemeForScreen("intro");
+
+      const storyEl = document.getElementById("introStory");
+      const introPrompt = document.getElementById("introPrompt");
+      const introAcceptBtn = document.getElementById("introAcceptBtn");
+      const flow = { stage: "title", controller: null, onKeyDown: null };
+
+      function setPrompt(show) {
+        introPrompt.classList.toggle("hidden", !show);
+      }
+
+      function startStoryTyping() {
+        flow.stage = "story_typing";
+        setPrompt(false);
+        storyEl.classList.remove("hidden");
+        storyEl.innerHTML = "";
+        flow.controller = typewriterParagraphs(storyEl, introStory, 22, () => {
+          flow.controller = null;
+          flow.stage = "story_done";
+          setPrompt(false);
+          introAcceptBtn.classList.remove("hidden");
+        });
+      }
+
+      const onKeyDown = (e) => {
+        if (e.code !== "Space") return;
+        const active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+        e.preventDefault();
+
+        if (flow.controller && flow.controller.typing) {
+          flow.controller.skip();
+          return;
+        }
+
+        if (flow.stage === "title") {
+          startStoryTyping();
+        }
+      };
+
+      introAcceptBtn.onclick = () => {
+        if (flow.controller && flow.controller.typing) flow.controller.skip();
+        state.screen = "password";
+        render();
+      };
+
+      flow.onKeyDown = onKeyDown;
+      state.trialFlow = flow;
+      document.addEventListener("keydown", onKeyDown);
+    }
+
+    function renderPassword() {
+      rotateNames();
+      const passwordStory = `The Storyteller lowers their voice.
+
+Before the Love Mushrooms. Before Berlin. Before invisible strings and dramatic sighs.
+
+There was… a word.
+
+On the very first day their Instagram banter sparked to life, the Princess Wife offered the Hero a gift from her homeland — a Lithuanian word, soft and mischievous.
+
+He repeated it carefully. Probably mispronounced it slightly. But he remembered. And he never stopped using it.
+
+Now the Witch of Long Distance has wrapped the entrance to the Enchanted Memory Forest in thorns and spellwork.
+
+‘The one who remembers the first word,’ she whispers, ‘may enter.’
+
+The gate glows faintly. It waits.`;
+      screenEl.innerHTML = `
+        <h2>QUEST 0: THE LOCKED GATE OF THE ENCHANTED MEMORY FOREST</h2>
+        <div id="passStory" class="story-paper no-divider hidden"></div>
+        <div id="passPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
+        <div id="passQuestionWrap" class="hidden">
+          <p class="typed-question">Whisper the first Lithuanian word ever taught to the Hero:</p>
+          <div class="options">
+            <input id="passInput" type="text" placeholder="enter password" autocomplete="off" />
+            <div><button id="passBtn">UNLOCK THE GATE</button></div>
+          </div>
+          <div id="passStatus" class="status"></div>
+        </div>
+      `;
+      applyThemeForScreen("quest0");
+
+      const storyEl = document.getElementById("passStory");
+      const promptEl = document.getElementById("passPrompt");
+      const questionWrap = document.getElementById("passQuestionWrap");
+      const input = document.getElementById("passInput");
+      const status = document.getElementById("passStatus");
+      const flow = { stage: "title", controller: null, onKeyDown: null };
+
+      function revealQuestion() {
+        flow.stage = "question";
+        questionWrap.classList.remove("hidden");
+        input.focus();
+      }
+
+      function startPasswordStory() {
+        flow.stage = "story_typing";
+        promptEl.classList.add("hidden");
+        storyEl.classList.remove("hidden");
+        storyEl.innerHTML = "";
+        flow.controller = typewriterParagraphs(storyEl, passwordStory, 22, () => {
+          flow.controller = null;
+          revealQuestion();
+        });
+      }
+
+      function submitPassword() {
+        const value = input.value.trim().toLowerCase();
+        if (value === "kaciukas") {
+          state.unlocked = true;
+          status.textContent = "ACCESS GRANTED";
+          status.className = "status good";
+          playCorrect();
+          setTimeout(() => {
+            state.screen = "level";
+            state.levelIndex = 0;
+            render();
+          }, 550);
+        } else {
+          status.textContent = "ACCESS DENIED";
+          status.className = "status bad";
+          input.classList.remove("shake");
+          void input.offsetWidth;
+          input.classList.add("shake");
+        }
+      }
+
+      const onKeyDown = (e) => {
+        if (e.code !== "Space") return;
+        const active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+        e.preventDefault();
+
+        if (flow.controller && flow.controller.typing) {
+          flow.controller.skip();
+          return;
+        }
+
+        if (flow.stage === "title") {
+          startPasswordStory();
+        }
+      };
+
+      document.getElementById("passBtn").onclick = submitPassword;
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter") submitPassword(); });
+      flow.onKeyDown = onKeyDown;
+      state.trialFlow = flow;
+      document.addEventListener("keydown", onKeyDown);
+    }
+
+    function clearTrialFlow() {
+      if (state.trialFlow && state.trialFlow.onKeyDown) {
+        document.removeEventListener("keydown", state.trialFlow.onKeyDown);
+      }
+      state.trialFlow = null;
+    }
+
+    function typewriterText(el, text, speed, onDone) {
+      const controller = { typing: true, skipRequested: false, timer: null };
+      let i = 0;
+      el.textContent = "";
+      function finishNow() {
+        if (!controller.typing) return;
+        if (controller.timer) clearTimeout(controller.timer);
+        el.textContent = text;
+        controller.typing = false;
+        onDone();
+      }
+      function tick() {
+        if (controller.skipRequested) return finishNow();
+        i += 1;
+        el.textContent = text.slice(0, i);
+        playTypeTick(i);
+        if (i >= text.length) {
+          controller.typing = false;
+          onDone();
+          return;
+        }
+        controller.timer = setTimeout(tick, speed);
+      }
+      controller.skip = () => { controller.skipRequested = true; };
+      tick();
+      return controller;
+    }
+
+    function typewriterParagraphs(container, paragraphs, speed, onDone) {
+      const parts = Array.isArray(paragraphs) ? paragraphs : String(paragraphs).split("\n\n");
+      const pEls = parts.map(() => {
+        const p = document.createElement("p");
+        p.textContent = "";
+        container.appendChild(p);
+        return p;
+      });
+      const controller = { typing: true, skipRequested: false, timer: null };
+      let pIndex = 0;
+      let cIndex = 0;
+      function finishNow() {
+        if (!controller.typing) return;
+        if (controller.timer) clearTimeout(controller.timer);
+        pEls.forEach((p, idx) => { p.textContent = parts[idx]; });
+        controller.typing = false;
+        onDone();
+      }
+      function tick() {
+        if (controller.skipRequested) return finishNow();
+        const txt = parts[pIndex] || "";
+        cIndex += 1;
+        pEls[pIndex].textContent = txt.slice(0, cIndex);
+        playTypeTick(cIndex);
+        if (cIndex >= txt.length) {
+          pIndex += 1;
+          cIndex = 0;
+          if (pIndex >= parts.length) {
+            controller.typing = false;
+            onDone();
+            return;
+          }
+        }
+        controller.timer = setTimeout(tick, speed);
+      }
+      controller.skip = () => { controller.skipRequested = true; };
+      tick();
+      return controller;
+    }
+
+    function renderStagedTrial({ title, storytellerParagraphs, questionText, buildOptions, noDivider = false, themeKey = null }) {
+      clearTrialFlow();
+      playJingle("quest");
+      screenEl.innerHTML = `
+        <h2>${title}</h2>
+        <div id="trialStory" class="story-paper hidden"></div>
+        <div id="trialPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
+        <p id="trialQuestion" class="typed-question hidden"></p>
+        <div id="trialOptions" class="hidden"></div>
+      `;
+      applyThemeForScreen(themeKey);
+
+      const promptEl = document.getElementById("trialPrompt");
+      const storyEl = document.getElementById("trialStory");
+      if (noDivider) storyEl.classList.add("no-divider");
+      const questionEl = document.getElementById("trialQuestion");
+      const optionsEl = document.getElementById("trialOptions");
+      const flow = { stage: "header", controller: null, onKeyDown: null };
+
+      function setPrompt(show) {
+        promptEl.classList.toggle("hidden", !show);
+      }
+
+      function startStoryStage() {
+        flow.stage = "story_typing";
+        setPrompt(false);
+        storyEl.classList.remove("hidden");
+        storyEl.innerHTML = "";
+        flow.controller = typewriterParagraphs(storyEl, storytellerParagraphs, 22, () => {
+          flow.controller = null;
+          flow.stage = "story_done";
+          setPrompt(true);
+        });
+      }
+
+      function startQuestionStage() {
+        flow.stage = "question_typing";
+        setPrompt(false);
+        questionEl.classList.remove("hidden");
+        flow.controller = typewriterText(questionEl, questionText, 22, () => {
+          flow.controller = null;
+          flow.stage = "options";
+          optionsEl.classList.remove("hidden");
+          buildOptions(optionsEl);
+        });
+      }
+
+      const onKeyDown = (e) => {
+        if (e.code !== "Space") return;
+        const active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+        if (flow.stage === "options") return;
+        e.preventDefault();
+
+        if (flow.controller && flow.controller.typing) {
+          flow.controller.skip();
+          return;
+        }
+
+        if (flow.stage === "header") {
+          startStoryStage();
+        } else if (flow.stage === "story_done") {
+          startQuestionStage();
+        }
+      };
+
+      flow.onKeyDown = onKeyDown;
+      state.trialFlow = flow;
+      document.addEventListener("keydown", onKeyDown);
+    }
+
+    function renderSingle(level) {
+      renderStagedTrial({
+        title: `Quest ${level.id}: ${level.title || "The Storyteller Speaks"}`,
+        storytellerParagraphs: level.storyteller || [`The Storyteller narrows ancient eyes at ${state.currentHero}, while ${state.currentWife} awaits rescue.`],
+        questionText: level.prompt,
+        themeKey: `quest${level.id}`,
+        noDivider: level.id === 4,
+        buildOptions: (host) => {
+          const options = level.options.map((opt, i) => `
+            <button class="option" data-answer="${opt.replace(/"/g, '&quot;')}">${String.fromCharCode(65 + i)}) ${opt}</button>
+          `).join("");
+          host.innerHTML = `<div class="options">${options}</div>`;
+          host.querySelectorAll(".option").forEach(btn => {
+            btn.onclick = () => {
+              if (state.questSubmissionLocked) return;
+              const answer = btn.dataset.answer;
+              if (answer === level.correct) {
+                answerCorrect(level);
+              } else {
+                registerMistake();
+              }
+            };
+          });
+        }
+      });
+    }
+
+    function renderMulti(level) {
+      renderStagedTrial({
+        title: `Quest ${level.id}: ${level.title || "Double Truth"}`,
+        storytellerParagraphs: level.storyteller || [`${state.currentHero} must deliver precision before the Witch writes another smug note.`],
+        questionText: level.prompt,
+        themeKey: `quest${level.id}`,
+        buildOptions: (host) => {
+          const rows = level.options.map((opt, i) => `
+            <label class="option"><input type="checkbox" value="${opt.replace(/"/g, '&quot;')}" /> ${String.fromCharCode(65 + i)}) ${opt}</label>
+          `).join("");
+          host.innerHTML = `
+            <div class="options">${rows}</div>
+            <button id="submitMulti">Seal the Offerings</button>
+          `;
+          host.querySelector("#submitMulti").onclick = () => {
+            if (state.questSubmissionLocked) return;
+            const selected = [...host.querySelectorAll('input[type="checkbox"]:checked')].map(c => c.value);
+            const sortedA = [...selected].sort().join("|");
+            const sortedB = [...level.correctSet].sort().join("|");
+            if (sortedA === sortedB) {
+              answerCorrect(level);
+            } else {
+              registerMistake();
+            }
+          };
+        }
+      });
+    }
+
+    function renderInput(level) {
+      renderStagedTrial({
+        title: `Quest ${level.id}: ${level.title || "Geometry of Destiny"}`,
+        storytellerParagraphs: level.storyteller || ["The Storyteller studies the parchment and waits for precision."],
+        questionText: level.prompt,
+        themeKey: `quest${level.id}`,
+        buildOptions: (host) => {
+          const optionRows = (level.options || []).map((opt, i) => `<div class="option">${String.fromCharCode(65 + i)}) ${opt}</div>`).join("");
+          host.innerHTML = `
+            ${optionRows ? `<div class="options">${optionRows}</div>` : ""}
+            <input id="dateInput" type="text" placeholder="type date" autocomplete="off" />
+            <div><button id="dateBtn">Offer Date</button></div>
+          `;
+          const dateInput = host.querySelector("#dateInput");
+          function submitDate() {
+            if (state.questSubmissionLocked) return;
+            const value = dateInput.value.trim().toLowerCase();
+            if (level.accepted.includes(value)) {
+              answerCorrect(level);
+            } else {
+              registerMistake();
+              dateInput.classList.remove("shake");
+              void dateInput.offsetWidth;
+              dateInput.classList.add("shake");
+            }
+          }
+          host.querySelector("#dateBtn").onclick = submitDate;
+          dateInput.addEventListener("keydown", (e) => { if (e.key === "Enter") submitDate(); });
+          dateInput.focus();
+        }
+      });
+    }
+
+    function finalRankDetails(m) {
+      if (m === 0) {
+        return {
+          title: "SUPREME HABAN OF THE COZY KINGDOM",
+          explanation: "Flawless memory. Maximum devotion. Blankets chosen correctly. The Witch is emotionally unemployed. Cracking levels: elite."
+        };
+      }
+      if (m <= 2) {
+        return {
+          title: "HIGH COMMANDER OF COZY OPERATIONS",
+          explanation: "Minor dramatic confusion detected, but overall performance strong. Instagram sorcery intact. JB energy stable. The Princess remains deeply impressed."
+        };
+      }
+      if (m <= 4) {
+        return {
+          title: "CERTIFIED JUICY BOOTY HERO",
+          explanation: "Respectable effort. Occasional memory turbulence. Still capable of leading the kingdom through tacos, enchiladas, and moderately coordinated victory dances."
+        };
+      }
+      if (m <= 6) {
+        return {
+          title: "APPRENTICE COZY BOY",
+          explanation: "Some answers required… reflection. The Witch experienced brief joy. However, love remains undefeated and blankets are still available upon request."
+        };
+      }
+      return {
+        title: "DRAMATICALLY CONFUSED BUT DEEPLY LOVED HABAN",
+        explanation: "Facts were questionable. Confidence was bold. The Princess Wife rolls her eyes — affectionately. Love prevails anyway."
+      };
+    }
+
+    function renderFinal() {
+      clearTrialFlow();
+      playJingle("finale");
+      const finalStory = `The Storyteller turns the final page, its edges glowing faintly in triumphant pink. The Witch of Long Distance shrieks into the void, for her petty schemes have failed. The Love Mushrooms have been gathered. The memories have been proven. The devotion has been witnessed.
+
+Across cities and time zones, through rescheduled flights and dramatic sighs, through cozy blankets and stubborn longing, the King Juicy Booty has answered the call.
+
+The Princess Wife is restored to the realm. Peace returns. Snacks may once again be over-ordered without interference. Love remains undefeated.
+
+And now the Princess Wife speaks not as legend, but as herself: she loves her Haban very much. She wishes him a happy Valentine’s Day. And she thanks him for saving her.`;
+      const rank = finalRankDetails(state.mistakes);
+
+      screenEl.innerHTML = `
+        <h1>THE KING JUICY BOOTY SAVES THE PRINCESS WIFE</h1>
+        <div id="finalStory" class="story-paper no-divider hidden"></div>
+        <div id="finalPrompt" class="space-prompt">PRESS SPACE TO CONTINUE</div>
+        <div id="finalStats" class="hidden">
+          <p class="typed-question"><strong>Final Quest Stats</strong></p>
+          <div class="final-stats">
+            <p><strong>Love 🍄 Collected:</strong> ${state.mushrooms} / 7</p>
+            <p><strong>Witch Satisfaction Index:</strong> ${state.mistakes}</p>
+            <p><strong>Rank:</strong> ${rank.title}</p>
+            <p>${rank.explanation}</p>
+          </div>
+        </div>
+      `;
+      applyThemeForScreen("final");
+
+      const storyEl = document.getElementById("finalStory");
+      const promptEl = document.getElementById("finalPrompt");
+      const statsEl = document.getElementById("finalStats");
+      const flow = { stage: "title", controller: null, onKeyDown: null };
+
+      function startFinalStory() {
+        flow.stage = "story_typing";
+        promptEl.classList.add("hidden");
+        storyEl.classList.remove("hidden");
+        storyEl.innerHTML = "";
+        flow.controller = typewriterParagraphs(storyEl, finalStory, 22, () => {
+          flow.controller = null;
+          flow.stage = "story_done";
+          promptEl.classList.remove("hidden");
+        });
+      }
+
+      const onKeyDown = (e) => {
+        if (e.code !== "Space") return;
+        const active = document.activeElement;
+        if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)) return;
+        if (flow.stage === "stats") return;
+        e.preventDefault();
+
+        if (flow.controller && flow.controller.typing) {
+          flow.controller.skip();
+          return;
+        }
+
+        if (flow.stage === "title") {
+          startFinalStory();
+          return;
+        }
+
+        if (flow.stage === "story_done") {
+          flow.stage = "stats";
+          promptEl.classList.add("hidden");
+          statsEl.classList.remove("hidden");
+        }
+      };
+
+      flow.onKeyDown = onKeyDown;
+      state.trialFlow = flow;
+      document.addEventListener("keydown", onKeyDown);
+    }
+
+    function renderLevel() {
+      state.questSubmissionLocked = false;
+      rotateNames();
+      const level = levels[state.levelIndex];
+      if (!level) {
+        state.screen = "final";
+        renderFinal();
+        return;
+      }
+      if (level.type === "single") renderSingle(level);
+      if (level.type === "multi") renderMulti(level);
+      if (level.type === "input") renderInput(level);
+    }
+
+    function render() {
+      clearTrialFlow();
+      updateHUD();
+      scheduleRandomTaunt();
+      if (state.screen === "intro") renderIntro();
+      else if (state.screen === "password") renderPassword();
+      else if (state.screen === "level") renderLevel();
+      else if (state.screen === "final") renderFinal();
+      else renderIntro();
+    }
+
+    achievementBtn.addEventListener("click", continueAfterAchievement);
+    document.addEventListener("keydown", ensureAudioUnlocked, { once: true });
+    document.addEventListener("pointerdown", ensureAudioUnlocked, { once: true });
+    window.setSfxEnabled = setSfxEnabled;
+
+    // Floating pixel hearts/mushrooms
+    (function makeFloaters() {
+      const icons = ["🍄", "❤", "✦"];
+      const holder = document.getElementById("floaters");
+      for (let i = 0; i < 22; i++) {
+        const node = document.createElement("span");
+        node.className = "floater";
+        node.textContent = icons[Math.floor(Math.random() * icons.length)];
+        node.style.left = `${Math.random() * 100}%`;
+        node.style.animationDuration = `${14 + Math.random() * 22}s`;
+        node.style.animationDelay = `${-Math.random() * 26}s`;
+        node.style.fontSize = `${14 + Math.random() * 18}px`;
+        holder.appendChild(node);
+      }
+    })();
+
+    // Start game
+    render();
+  </script>
+</body>
+</html>
