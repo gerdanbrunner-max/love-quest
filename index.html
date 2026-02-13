@@ -237,26 +237,6 @@
     .good { color: var(--success); }
     .bad { color: var(--danger); }
 
-    .floaters {
-      position: fixed;
-      inset: 0;
-      z-index: 0;
-      overflow: hidden;
-      pointer-events: none;
-    }
-
-    .floater {
-      position: absolute;
-      font-size: 20px;
-      opacity: 0.18;
-      animation: drift linear infinite;
-    }
-
-    @keyframes drift {
-      from { transform: translateY(110vh); }
-      to { transform: translateY(-20vh); }
-    }
-
     .witch-wrap {
       position: fixed;
       right: 14px;
@@ -400,8 +380,8 @@
     }
 
     .quest-deco {
-      position: absolute;
-      inset: 92px 0 0;
+      position: fixed;
+      inset: 70px 0 0;
       pointer-events: none;
       z-index: 1;
       overflow: hidden;
@@ -410,25 +390,15 @@
     .deco {
       position: absolute;
       image-rendering: pixelated;
-      opacity: 0.09;
-      filter: blur(1px);
+      opacity: 0.12;
+      filter: blur(0.8px);
       transform: translateZ(0);
-      animation: driftY 18s ease-in-out infinite, driftX 22s ease-in-out infinite, rotateSlow 28s linear infinite;
+      animation: floatUp 18s linear infinite;
     }
 
-    @keyframes driftY {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-18px); }
-    }
-
-    @keyframes driftX {
-      0%, 100% { margin-left: 0; }
-      50% { margin-left: 14px; }
-    }
-
-    @keyframes rotateSlow {
-      from { rotate: -3deg; }
-      to { rotate: 3deg; }
+    @keyframes floatUp {
+      from { transform: translate3d(0, 0, 0); }
+      to { transform: translate3d(var(--drift-x, 10px), -120vh, 0); }
     }
 
     @media (max-width: 760px) {
@@ -444,8 +414,6 @@
     <span id="hudMushrooms">LOVE 🍄 COLLECTED x0</span>
     <span id="hudMistakes">WITCH SATISFACTION INDEX x0</span>
   </div>
-
-  <div class="floaters" id="floaters"></div>
 
   <main class="game-wrap">
     <div id="questDeco" class="quest-deco" aria-hidden="true"></div>
@@ -768,21 +736,24 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       if (questDecoEl) {
         questDecoEl.innerHTML = "";
         if (theme && theme.deco) {
-          const count = 4 + Math.floor(Math.random() * 5);
+          const count = 10 + Math.floor(Math.random() * 9);
+          const randomizeDeco = (img, fromBottom = false) => {
+            img.style.left = `${5 + Math.random() * 90}%`;
+            img.style.top = fromBottom ? `${100 + Math.random() * 20}%` : `${15 + Math.random() * 80}%`;
+            img.style.width = `${56 + Math.random() * 84}px`;
+            img.style.opacity = `${0.10 + Math.random() * 0.08}`;
+            img.style.setProperty("--drift-x", `${-28 + Math.random() * 56}px`);
+            img.style.animationDuration = `${14 + Math.random() * 14}s`;
+            img.style.animationDelay = `${-Math.random() * 18}s`;
+          };
           for (let i = 0; i < count; i++) {
             const src = theme.deco[i % theme.deco.length];
-            const left = 5 + Math.random() * 90;
-            const top = 10 + Math.random() * 80;
-            const size = 48 + Math.random() * 72;
             const img = document.createElement("img");
             img.className = "deco";
             img.src = src;
             img.alt = "";
-            img.style.left = `${left}%`;
-            img.style.top = `${top}%`;
-            img.style.width = `${size}px`;
-            img.style.animationDuration = `${12 + Math.random() * 12}s, ${14 + Math.random() * 14}s, ${20 + Math.random() * 14}s`;
-            img.style.animationDelay = `${-Math.random() * 10}s, ${-Math.random() * 10}s, ${-Math.random() * 10}s`;
+            randomizeDeco(img);
+            img.addEventListener("animationiteration", () => randomizeDeco(img, true));
             questDecoEl.appendChild(img);
           }
         }
@@ -1483,22 +1454,6 @@ And now the Princess Wife speaks not as legend, but as herself: she loves her Ha
     };
     document.addEventListener("keydown", onFirstAudioKeydown);
     window.setSfxEnabled = setSfxEnabled;
-
-    // Floating pixel hearts/mushrooms
-    (function makeFloaters() {
-      const icons = ["🍄", "❤", "✦"];
-      const holder = document.getElementById("floaters");
-      for (let i = 0; i < 22; i++) {
-        const node = document.createElement("span");
-        node.className = "floater";
-        node.textContent = icons[Math.floor(Math.random() * icons.length)];
-        node.style.left = `${Math.random() * 100}%`;
-        node.style.animationDuration = `${14 + Math.random() * 22}s`;
-        node.style.animationDelay = `${-Math.random() * 26}s`;
-        node.style.fontSize = `${14 + Math.random() * 18}px`;
-        holder.appendChild(node);
-      }
-    })();
 
     // Start game
     render();
