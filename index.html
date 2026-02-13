@@ -742,7 +742,10 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
           const randomizeDeco = (img, fromBottom = false) => {
             img.style.left = `${5 + Math.random() * 90}%`;
             img.style.top = fromBottom ? `${100 + Math.random() * 20}%` : `${15 + Math.random() * 80}%`;
-            img.style.width = `${56 + Math.random() * 84}px`;
+            const size = `${56 + Math.random() * 84}px`;
+            const parsed = parseFloat(size);
+            img.style.width = Number.isFinite(parsed) ? `${parsed * 0.5}px` : size;
+            img.style.height = "auto";
             img.style.opacity = `${0.10 + Math.random() * 0.08}`;
             img.style.setProperty("--drift-x", `${-28 + Math.random() * 56}px`);
             img.style.animationDuration = `${14 + Math.random() * 14}s`;
