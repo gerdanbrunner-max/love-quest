@@ -434,6 +434,9 @@
     </div>
   </div>
 
+  <audio id="typeTickAudio" src="./assets/sfx/type-tick.mp3" preload="auto"></audio>
+  <audio id="jingleAudio" preload="auto"></audio>
+
   <script>
     // ===== Editable content data =====
     const heroNames = ["Mr. Haban", "Cozy Boy", "Juicy Booty", "Husband", "Captain America"];
@@ -568,7 +571,10 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       letterOpen: false,
       audioCtx: null,
       trialFlow: null,
-      questSubmissionLocked: false
+      questSubmissionLocked: false,
+      sfxEnabled: true,
+      audioUnlocked: false,
+      lastTypeTickAt: 0
     };
 
     const screenEl = document.getElementById("screen");
@@ -583,8 +589,68 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
     const errorMessageEl = document.getElementById("errorMessage");
     const errorCountEl = document.getElementById("errorCount");
     const errorAckBtn = document.getElementById("errorAckBtn");
+    const typeTickAudio = document.getElementById("typeTickAudio");
+    const jingleAudio = document.getElementById("jingleAudio");
 
     function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    function ensureAudioUnlocked() {
+      if (state.audioUnlocked) return;
+      state.audioUnlocked = true;
+      if (state.audioCtx && state.audioCtx.state === "suspended") {
+        state.audioCtx.resume().catch(() => {});
+      }
+      [typeTickAudio, jingleAudio].forEach((audio) => {
+        if (!audio) return;
+        try {
+          const p = audio.play();
+          if (p && typeof p.then === "function") p.then(() => audio.pause()).catch(() => {});
+          else audio.pause();
+        } catch (_) {}
+        audio.currentTime = 0;
+      });
+    }
+
+    function setSfxEnabled(enabled) {
+      state.sfxEnabled = !!enabled;
+      if (!state.sfxEnabled && jingleAudio) {
+        jingleAudio.pause();
+        jingleAudio.currentTime = 0;
+      }
+    }
+
+    function playSfx(name, { volume = 0.45 } = {}) {
+      if (!state.sfxEnabled || !state.audioUnlocked) return;
+      if (name === "tick" && typeTickAudio) {
+        try {
+          typeTickAudio.pause();
+          typeTickAudio.currentTime = 0;
+          typeTickAudio.volume = volume;
+          typeTickAudio.play().catch(() => {});
+        } catch (_) {}
+      }
+    }
+
+    function playTypeTick(charCounter) {
+      const now = performance.now();
+      if (charCounter % 3 !== 0) return;
+      if (now - state.lastTypeTickAt < 60) return;
+      state.lastTypeTickAt = now;
+      playSfx("tick", { volume: 0.22 });
+    }
+
+    function playJingle(kind) {
+      if (!jingleAudio) return;
+      jingleAudio.pause();
+      jingleAudio.currentTime = 0;
+      jingleAudio.loop = false;
+      jingleAudio.src = kind === "finale" ? "./assets/sfx/finale-jingle.mp3" : "./assets/sfx/quest-jingle.mp3";
+      jingleAudio.load();
+      if (state.sfxEnabled && state.audioUnlocked) {
+        jingleAudio.volume = kind === "finale" ? 0.62 : 0.5;
+        jingleAudio.play().catch(() => {});
+      }
+    }
 
     function rotateNames() {
       state.currentHero = pick(heroNames);
@@ -727,6 +793,7 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
 
     function renderIntro() {
       clearTrialFlow();
+      playJingle("quest");
       const introStory = `The Storyteller speaks of two people who absolutely refused to let geography win. They survived time zones, airport goodbyes, delayed flights, and the emotional sport of long distance.
 
 Against all logistical reason, they built a life from ordinary magic: dishes that never end, laundry that multiplies, cooking side by side, quiet reading, long walks, and so much cracking. The kind of love that thrives not in fireworks — but in the mundane.
@@ -920,6 +987,7 @@ The gate glows faintly. It waits.`;
         if (controller.skipRequested) return finishNow();
         i += 1;
         el.textContent = text.slice(0, i);
+        playTypeTick(i);
         if (i >= text.length) {
           controller.typing = false;
           onDone();
@@ -955,6 +1023,7 @@ The gate glows faintly. It waits.`;
         const txt = parts[pIndex] || "";
         cIndex += 1;
         pEls[pIndex].textContent = txt.slice(0, cIndex);
+        playTypeTick(cIndex);
         if (cIndex >= txt.length) {
           pIndex += 1;
           cIndex = 0;
@@ -973,6 +1042,7 @@ The gate glows faintly. It waits.`;
 
     function renderStagedTrial({ title, storytellerParagraphs, questionText, buildOptions, noDivider = false }) {
       clearTrialFlow();
+      playJingle("quest");
       screenEl.innerHTML = `
         <h2>${title}</h2>
         <div id="trialStory" class="story-paper hidden"></div>
@@ -1159,6 +1229,7 @@ The gate glows faintly. It waits.`;
 
     function renderFinal() {
       clearTrialFlow();
+      playJingle("finale");
       const finalStory = `The Storyteller turns the final page, its edges glowing faintly in triumphant pink. The Witch of Long Distance shrieks into the void, for her petty schemes have failed. The Love Mushrooms have been gathered. The memories have been proven. The devotion has been witnessed.
 
 Across cities and time zones, through rescheduled flights and dramatic sighs, through cozy blankets and stubborn longing, the King Juicy Booty has answered the call.
@@ -1255,6 +1326,9 @@ And now the Princess Wife speaks not as legend, but as herself: she loves her Ha
     }
 
     achievementBtn.addEventListener("click", continueAfterAchievement);
+    document.addEventListener("keydown", ensureAudioUnlocked, { once: true });
+    document.addEventListener("pointerdown", ensureAudioUnlocked, { once: true });
+    window.setSfxEnabled = setSfxEnabled;
 
     // Floating pixel hearts/mushrooms
     (function makeFloaters() {
