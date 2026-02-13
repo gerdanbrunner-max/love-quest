@@ -701,12 +701,13 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       const theme = themes[themeKey];
       const heading = screenEl.querySelector("h1, h2");
       let banner = document.getElementById("questBanner");
-      if (!banner && heading) {
+      if (!banner) {
         banner = document.createElement("img");
         banner.id = "questBanner";
         banner.className = "quest-banner";
         banner.alt = "";
-        heading.insertAdjacentElement("afterend", banner);
+        if (heading) heading.insertAdjacentElement("afterend", banner);
+        else screenEl.prepend(banner);
       }
       if (banner) {
         if (theme && theme.banner) {
