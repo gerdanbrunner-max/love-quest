@@ -410,13 +410,25 @@
     .deco {
       position: absolute;
       image-rendering: pixelated;
-      opacity: 0.15;
-      animation: decoFloat 8s ease-in-out infinite;
+      opacity: 0.09;
+      filter: blur(1px);
+      transform: translateZ(0);
+      animation: driftY 18s ease-in-out infinite, driftX 22s ease-in-out infinite, rotateSlow 28s linear infinite;
     }
 
-    @keyframes decoFloat {
+    @keyframes driftY {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
+      50% { transform: translateY(-18px); }
+    }
+
+    @keyframes driftX {
+      0%, 100% { margin-left: 0; }
+      50% { margin-left: 14px; }
+    }
+
+    @keyframes rotateSlow {
+      from { rotate: -3deg; }
+      to { rotate: 3deg; }
     }
 
     @media (max-width: 760px) {
@@ -722,16 +734,16 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
 
     function applyThemeForScreen(themeKey) {
       const themes = {
-        intro: { banner: "assets/banners/prologue.png", deco: [["assets/deco/sparkle.png", "10%", "16%", "24px"], ["assets/deco/sparkle.png", "84%", "22%", "20px"], ["assets/deco/mushroom.png", "88%", "72%", "34px"]] },
-        quest0: { banner: "assets/banners/quest0_gate.png", deco: [["assets/deco/sparkle.png", "12%", "20%", "24px"], ["assets/deco/sparkle.png", "82%", "18%", "20px"], ["assets/deco/mushroom.png", "86%", "74%", "34px"]] },
-        quest1: { banner: "assets/banners/quest1_fluorescents.png", deco: [["assets/deco/office_chair.png", "8%", "76%", "36px"], ["assets/deco/office_chair.png", "88%", "76%", "36px"], ["assets/deco/badge_scanner.png", "83%", "16%", "24px"]] },
-        quest2: { banner: "assets/banners/quest2_berlin.png", deco: [["assets/deco/berlin_bear.png", "11%", "70%", "36px"], ["assets/deco/kebab.png", "86%", "68%", "34px"]] },
-        quest3: { banner: "assets/banners/quest3_string.png", deco: [["assets/deco/thread_sparkle.png", "12%", "24%", "22px"], ["assets/deco/sparkle.png", "84%", "24%", "22px"]] },
-        quest4: { banner: "assets/banners/quest4_nida.png", deco: [["assets/deco/sand_speck.png", "9%", "76%", "28px"], ["assets/deco/mushroom.png", "88%", "72%", "32px"]] },
-        quest5: { banner: "assets/banners/quest5_letter.png", deco: [["assets/deco/heart.png", "10%", "22%", "24px"], ["assets/deco/sparkle.png", "86%", "24%", "22px"]] },
-        quest6: { banner: "assets/banners/quest6_flowers_ring.png", deco: [["assets/deco/petal.png", "12%", "18%", "22px"], ["assets/deco/petal.png", "22%", "28%", "18px"], ["assets/deco/champagne.png", "88%", "70%", "30px"]] },
-        quest7: { banner: "assets/banners/quest7_food.png", deco: [["assets/deco/dice.png", "10%", "72%", "30px"], ["assets/deco/remote.png", "86%", "72%", "30px"], ["assets/deco/heart.png", "82%", "24%", "18px"]] },
-        final: { banner: "assets/banners/final_home.png", deco: [["assets/deco/heart.png", "10%", "20%", "24px"], ["assets/deco/heart.png", "86%", "22%", "20px"], ["assets/deco/mushroom.png", "12%", "74%", "30px"], ["assets/deco/sparkle.png", "88%", "72%", "20px"]] }
+        intro: { banner: "assets/banners/prologue.png", deco: ["assets/deco/sparkle.png"] },
+        quest0: { banner: "assets/banners/quest0_gate.png", deco: ["assets/deco/sparkle.png"] },
+        quest1: { banner: "assets/banners/quest1_fluorescents.png", deco: ["assets/deco/office_chair.png", "assets/deco/badge_scanner.png"] },
+        quest2: { banner: "assets/banners/quest2_berlin.png", deco: ["assets/deco/berlin_bear.png", "assets/deco/kebab.png"] },
+        quest3: { banner: "assets/banners/quest3_string.png", deco: ["assets/deco/thread_sparkle.png"] },
+        quest4: { banner: "assets/banners/quest4_nida.png", deco: ["assets/deco/sand_speck.png", "assets/deco/mushroom.png"] },
+        quest5: { banner: "assets/banners/quest5_letter.png", deco: ["assets/deco/heart.png"] },
+        quest6: { banner: "assets/banners/quest6_flowers_ring.png", deco: ["assets/deco/petal.png", "assets/deco/champagne.png"] },
+        quest7: { banner: "assets/banners/quest7_food.png", deco: ["assets/deco/dice.png", "assets/deco/remote.png"] },
+        final: { banner: "assets/banners/final_home.png", deco: ["assets/deco/heart.png", "assets/deco/mushroom.png", "assets/deco/sparkle.png"] }
       };
       const theme = themes[themeKey];
       const heading = screenEl.querySelector("h1, h2");
@@ -756,17 +768,23 @@ As evening arrived, Cozy Boy and his Princess Wife returned to their humble quar
       if (questDecoEl) {
         questDecoEl.innerHTML = "";
         if (theme && theme.deco) {
-          theme.deco.forEach(([src, left, top, size], i) => {
+          const count = 4 + Math.floor(Math.random() * 5);
+          for (let i = 0; i < count; i++) {
+            const src = theme.deco[i % theme.deco.length];
+            const left = 5 + Math.random() * 90;
+            const top = 10 + Math.random() * 80;
+            const size = 48 + Math.random() * 72;
             const img = document.createElement("img");
             img.className = "deco";
             img.src = src;
             img.alt = "";
-            img.style.left = left;
-            img.style.top = top;
-            img.style.width = size;
-            img.style.animationDelay = `${i * 0.8}s`;
+            img.style.left = `${left}%`;
+            img.style.top = `${top}%`;
+            img.style.width = `${size}px`;
+            img.style.animationDuration = `${12 + Math.random() * 12}s, ${14 + Math.random() * 14}s, ${20 + Math.random() * 14}s`;
+            img.style.animationDelay = `${-Math.random() * 10}s, ${-Math.random() * 10}s, ${-Math.random() * 10}s`;
             questDecoEl.appendChild(img);
-          });
+          }
         }
       }
     }
