@@ -1,120 +1,191 @@
-# Love Quest: The Snatching of the Queen of Mushrooms
+# Love Quest
 
-Love Quest is a single-page, static web application built as a retro-inspired narrative quiz game. The project combines an 8-bit aesthetic with structured game logic to create a level-based interactive experience. The application is fully client-side and requires no external libraries, frameworks, or backend services.
+Love Quest is a retro arcade-style browser game with a whimsical fairy-tale narrative.  
+Built with vanilla HTML, CSS, and JavaScript, it blends pixel-art aesthetics, interactive storytelling, sound effects, and multi-level quest progression into a playful, story-driven experience.
 
-## Overview
+Designed as a personal interactive adventure, the game combines nostalgia, humor, and cozy romance with arcade-inspired UI.
 
-This project is a browser-based interactive game structured around six progressive levels. The player completes a series of narrative-driven trials to unlock achievements and reach the final screen.
+---
 
-Core features include:
-- Intro story and rules screen
-- Password-protected entry (client-side validation)
-- Six quiz-based levels with mixed input types
-- Achievement overlay after each completed level
-- Persistent retro-style HUD displaying level, collected items, and mistakes
-- Dynamic UI feedback and sound effects
-- Performance-based ranking logic
+## Live Demo
 
-## Technology Stack
+https://gerdanbrunner-max.github.io/love-quest/
 
-- HTML5
-- CSS3
-- Vanilla JavaScript (ES6+)
-- Web Audio API (for sound effects)
+---
 
-The project is implemented as a single `index.html` file containing markup, styling, and scripting. No build tools, frameworks, or package managers are required.
+## Features
 
-## Architecture
+- Prologue + 7 main quests + final screen
+- Typewriter storyteller text animation
+- Sound effects system:
+  - Typing tick (plays during text animation)
+  - Shared quest jingle
+  - Grand final jingle
+  - Correct / incorrect answer chime
+- Sound effects enabled by default
+- Mobile support:
+  - SPACE key continues on desktop
+  - Tap anywhere on the main panel continues on mobile
+- Themed pixel-art banners per quest
+- Floating themed background decorations per quest
+- Dynamic ranking system on final screen
+- Love Mushroom collection mechanic
+- Witch Satisfaction Index tracking
+- Retro arcade UI styling with CRT-inspired effects
 
-The application follows a simple state-driven UI model.
+---
 
-Global state tracks:
-- Current level
-- Love Mushrooms collected
-- Mistake count
-- Unlock status (stored in `localStorage`)
+## Gameplay Overview
 
-Screens are conditionally rendered based on state:
-- Intro screen
-- Password gate
-- Levels 1–6
-- Achievement overlays
-- Final victory screen
+The player progresses through a sequence of quests to rescue the Princess Wife from the Witch of Long Distance.
 
-Input handling supports:
-- Single-choice multiple selection
-- Multi-select validation (exact match required)
-- Free-text input with case-insensitive comparison and whitespace trimming
+Each quest includes:
+- A storyteller introduction (animated via typewriter effect)
+- A themed banner
+- Floating decorative background elements unique to the quest
+- A question or challenge
+- A reward system (Love Mushrooms)
 
-All validation is handled client-side.
+The final screen summarizes:
+- Total Love Mushrooms collected
+- Witch Satisfaction Index
+- Final rank with custom explanation text
 
-## HUD and UI Behavior
+---
 
-A fixed top HUD displays:
-- Current level (1–6)
-- Love Mushrooms collected
-- Witch Satisfaction (mistakes counter)
+## Project Structure
 
-The HUD updates dynamically as the game state changes.
+/assets  
+  /banners     → Quest header pixel-art banners  
+  /deco        → Floating themed decoration elements  
+  /sfx         → Sound effects (typing tick, jingles, etc.)  
 
-A persistent character element (the Witch) is anchored in a screen corner and generates contextual speech bubble messages based on:
-- Incorrect answers
-- Achievement unlocks
-- Random timed intervals during active levels
+index.html     → Main game file (HTML, CSS, JS combined)  
+README.md  
+
+---
+
+## Banner Naming Convention
+
+assets/banners/
+
+prologue.png  
+quest0_gate.png  
+quest1_fluorescents.png  
+quest2_berlin.png  
+quest3_string.png  
+quest4_nida.png  
+quest5_letter.png  
+quest6_flowers_ring.png  
+quest7_food.png  
+final_home.png  
+
+Banners are:
+- Centered
+- Responsive
+- Contained within the panel
+- Scaled appropriately across screen sizes
+
+---
+
+## Decoration System
+
+assets/deco/
+
+Each quest defines its own decorative elements through the theming system.
+
+Decoration logic:
+- Assigned per quest
+- Positioned dynamically
+- Animated with vertical floating effect
+- Rendered behind main panel content
+- Scaled consistently across all themes
+
+Themes include:
+- intro
+- quest0
+- quest1
+- quest2
+- quest3
+- quest4
+- quest5
+- quest6
+- quest7
+- final
+
+---
 
 ## Audio Implementation
 
-Sound effects are generated using the Web Audio API:
-- Incorrect answer tone
-- Correct answer chime
-- Achievement unlock sound
-- Final victory sound
+Audio files are stored in:
 
-No background music is included.
+assets/sfx/
 
-## File Structure
+Includes:
+- Typewriter tick
+- Quest jingle
+- Final grand jingle
+- Correct answer sound
+- Incorrect answer sound
 
-/
-├── index.html  
-└── README.md  
+Audio behavior:
+- Sounds unlock on first user interaction
+- Typing sound plays during storyteller animation
+- Quest jingle plays at start of each quest
+- Grand jingle plays on final screen
+- Missing audio files will produce 404 errors
 
-All functionality is embedded within `index.html`.
+Sound effects are enabled by default.
+
+---
+
+## Interaction Logic
+
+Desktop:
+- SPACE key advances story and prompts
+
+Mobile:
+- Tapping on the main panel advances progression
+- Interactive elements (buttons, inputs, options) are ignored
+- Unified continue handler prevents double triggers
+
+The on-screen text remains "PRESS SPACE TO CONTINUE" for stylistic consistency.
+
+---
 
 ## Deployment
 
-The project is deployed using GitHub Pages.
+Hosted via GitHub Pages.
 
-Deployment steps:
-1. Push `index.html` to the `main` branch.
-2. Enable GitHub Pages in repository settings:
-   - Source: Deploy from branch
-   - Branch: main
-   - Folder: root
-3. Access the deployed application at:
-   https://<username>.github.io/<repository-name>/
+Settings:
+- Deploy from main branch
+- Root directory publishing
 
-## Local Development
+Important:
+Use relative asset paths:
 
-No setup is required.
+Correct:
+assets/banners/prologue.png
 
-To run locally:
-- Download the repository
-- Open `index.html` in a modern browser
+Incorrect:
+ /assets/banners/prologue.png
 
-Ensure the HTML file includes:
-<meta charset="UTF-8">
+Direct asset URLs:
+https://gerdanbrunner-max.github.io/love-quest/assets/...
 
-This is required for proper rendering of non-ASCII characters.
+---
 
-## Ranking Logic
+## Technical Notes
 
-Final rank is determined by total mistakes:
+- Single-file architecture (index.html)
+- Vanilla JavaScript
+- No frameworks
+- Pixel-art rendering using image-rendering: pixelated
+- CRT-inspired visual effects
+- Responsive layout for desktop and mobile
 
-0–2: Love Legend  
-3–5: Certified Haban  
-6–9: Chaotic but Adorable  
-10+: Witch’s Favorite  
+---
 
 ## License
 
-This project is a private personal application and is not distributed under a public license.
+Personal project. Not intended for commercial use.
